@@ -700,6 +700,7 @@ with tab1:
             rotate_value = 90 if rotate_checkbox else 0
             dither_value = dither_checkbox
             print_image(image_to_process, rotate=rotate_value, dither=dither_value)
+        "press print button a lot of times to queue images, do it its the best"
 
         # Display image based on checkbox status
         if dither_checkbox:
