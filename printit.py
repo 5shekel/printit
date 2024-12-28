@@ -603,11 +603,37 @@ def add_border(image, border_width=1):
         return ImageOps.expand(image, border=border_width, fill='black')
 
 
-def apply_histogram_equalization(image):
-    """Apply histogram equalization to an image"""
+def apply_levels(image, black_point=0, white_point=255):
+    """Apply levels adjustment to an image"""
     if image.mode != 'L':
         image = image.convert('L')
-    return ImageOps.equalize(image)
+    
+    # Create lookup table for the transformation
+    lut = []
+    for i in range(256):
+        # Normalize the input range
+        if i <= black_point:
+            lut.append(0)
+        elif i >= white_point:
+            lut.append(255)
+        else:
+            # Linear mapping between black and white points
+            normalized = (i - black_point) / (white_point - black_point)
+            lut.append(int(normalized * 255))
+    
+    return image.point(lut)
+
+
+def apply_histogram_equalization(image, black_point=0, white_point=255):
+    """Apply histogram equalization with levels adjustment to an image"""
+    if image.mode != 'L':
+        image = image.convert('L')
+    
+    # First apply levels adjustment
+    leveled = apply_levels(image, black_point, white_point)
+    
+    # Then apply histogram equalization
+    return ImageOps.equalize(leveled)
 
 
 # Streamlit app
@@ -817,43 +843,46 @@ with tab2:
 
         # Calculate initial max size with default font
         try:
-            # For 5x5 font, calculate size based on label width
-            if font == "fonts/5x5-Tami.ttf":
-                # Get the longest line length
-                chars_per_line = max(len(line) for line in text.split('\n'))
-                if chars_per_line == 0:
-                    chars_per_line = 1
-                
-                print(f"Debug font sizing:")
-                print(f"- Label width: {label_width} dots")
-                print(f"- Longest line: {chars_per_line} characters")
-                
-                # Base size on 62mm label (696 dots) which looks good at size 60
-                base_text_length = 14  # "write something" length
-                base_label_width = 696  # Width for 62mm label
-                base_font_size = 60     # Known good size for 62mm label
-                
-                # Scale base font size according to label width
-                width_scale = label_width / base_label_width
-                scaled_base_size = int(base_font_size * width_scale)
-                
-                print(f"- Base label width: {base_label_width} dots")
-                print(f"- Current label width: {label_width} dots")
-                print(f"- Width scale factor: {width_scale:.2f}")
-                print(f"- Scaled base size: {scaled_base_size}")
-                
-                # Now scale according to text length
-                font_size = int(scaled_base_size * (base_text_length / chars_per_line))
-                
-                # Ensure minimum size of 20
-                font_size = max(font_size, 20)
-                
-                print(f"- Final font size: {font_size}")
-                
-                max_size = font_size
+            # Get the longest line length
+            chars_per_line = max(len(line) for line in text.split('\n'))
+            if chars_per_line == 0:
+                chars_per_line = 1
+            
+            print(f"Debug font sizing:")
+            print(f"- Label type: {label_type}")
+            print(f"- Label width: {label_width} dots")
+            print(f"- Longest line: {chars_per_line} characters")
+            
+            # Base sizes for different label types
+            if label_type == "62":  # 62mm label
+                base_font_size = 60
+                base_width = 696
+            elif label_type == "102":  # 102mm label
+                base_font_size = 107
+                base_width = 1164
             else:
-                max_size = calculate_max_font_size(label_width, text, font)
-                font_size = max_size
+                # For other sizes, scale from 62mm base
+                base_font_size = 60
+                base_width = 696
+            
+            # First scale based on width ratio
+            width_scale = label_width / base_width
+            scaled_base_size = int(base_font_size * width_scale)
+            
+            # Then scale based on text length (14 chars is our reference)
+            base_text_length = 14  # "write something" length
+            text_scale = base_text_length / chars_per_line
+            font_size = int(scaled_base_size * text_scale)
+            
+            # Ensure minimum size of 20
+            font_size = max(font_size, 20)
+            
+            print(f"- Base font size: {base_font_size}")
+            print(f"- Width scale: {width_scale:.2f}")
+            print(f"- Text scale: {text_scale:.2f}")
+            print(f"- Final font size: {font_size}")
+            
+            max_size = font_size
         except Exception as e:
             max_size = 60  # Default to known good size for 62mm
             font_size = max_size
@@ -890,11 +919,22 @@ with tab2:
                     chars_per_line = max(len(line) for line in text.split('\n'))
                     if chars_per_line == 0:
                         chars_per_line = 1
-                    # Use same calculation as above
-                    base_text_length = 14
-                    base_font_size = 60
-                    font_size = int(base_font_size * (base_text_length / chars_per_line))
-                    font_size = max(font_size, 20)
+                    # Use same calculation as above for consistency
+                    if label_type == "62":  # 62mm label
+                        font_size = 60
+                    elif label_type == "102":  # 102mm label
+                        font_size = 107
+                    else:
+                        # For other sizes, scale based on width ratio from 62mm label
+                        base_width = 696  # Width of 62mm label
+                        width_scale = label_width / base_width
+                        font_size = int(60 * width_scale)  # Scale from base size of 60
+                    
+                    print(f"Font size recalculated:")
+                    print(f"- Label type: {label_type}")
+                    print(f"- Label width: {label_width} dots")
+                    print(f"- Font size: {font_size}")
+                    
                     max_size = font_size
                 else:
                     max_size = calculate_max_font_size(label_width, text, font)
@@ -1134,6 +1174,7 @@ with tab6:
 
                 st.text("General options:")
                 mirror_checkbox = st.checkbox("Mirror Mask", value=False)
+                invert_checkbox = st.checkbox("Invert Image", value=False)
                 border_checkbox = st.checkbox("Show border in preview", value=True, help="Adds a border in the preview to help visualize boundaries (not printed)")
                 equalize_checkbox = st.checkbox("Apply Histogram Equalization", value=False, help="Enhance image contrast")
                 
@@ -1153,9 +1194,20 @@ with tab6:
                 if mirror_checkbox:
                     image = ImageOps.mirror(image)
 
+                if invert_checkbox:
+                    image = ImageOps.invert(image)
+
+                if equalize_checkbox:
+                    st.text("Levels Adjustment:")
+                    col_levels1, col_levels2 = st.columns(2)
+                    with col_levels1:
+                        black_point = st.slider("Black Point", 0, 255, 0)
+                    with col_levels2:
+                        white_point = st.slider("White Point", 0, 255, 255)
+
                 # Apply histogram equalization if selected
                 if equalize_checkbox:
-                    image = apply_histogram_equalization(image)
+                    image = apply_histogram_equalization(image, black_point, white_point)
 
                 # Process image based on choice
                 if print_choice == "Original":
@@ -1182,6 +1234,8 @@ with tab6:
                 print_button_label += ", Rotated 90°"
             if mirror_checkbox:
                 print_button_label += ", Mirrored"
+            if invert_checkbox:
+                print_button_label += ", Inverted"
             if target_width_mm > 0:
                 print_button_label += f", Width: {target_width_mm}mm"
 
