@@ -49,7 +49,7 @@
               wantedBy = [ config.systemd.defaultUnit ];
               path = [ pythonWithDeps ];
               script = ''
-                python -m streamlit run ${./printit.py} --server.fileWatcherType none
+                python -m streamlit run ${./.}/printit.py --server.fileWatcherType none
               '';
               serviceConfig = {
                 StateDirectory = "printit";
