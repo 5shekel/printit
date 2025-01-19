@@ -919,6 +919,7 @@ with tab2:
             except Exception as e:
                 print(f"Error calculating font size for {font}: {e}")
             font_size = st.slider("Font Size", 20, max_size + 50, max_size)
+        line_spacing = st.slider("Line Spacing", 0, 200, 10)
 
         # Font Size
         try:
@@ -930,7 +931,6 @@ with tab2:
                 st.warning(f"Font {font} not found, using default font. Please ensure fonts/5x5-Tami.ttf exists.")
             except Exception as e:
                 st.error(f"Error loading font: {e}")
-        line_spacing = 20  # Adjust this value to set the desired line spacing
 
         # Calculate the new image height based on the bounding boxes
         new_image_height = calculate_actual_image_height_with_empty_lines(
