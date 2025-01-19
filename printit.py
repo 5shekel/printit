@@ -4,6 +4,7 @@ import requests
 import io
 import glob
 import base64
+import hashlib
 import os
 import re
 import tempfile
@@ -285,12 +286,10 @@ def get_fonts():
     return [ "fonts/" + i for i in os.listdir("fonts/") if i.endswith(".ttf")]
 
 def safe_filename(text):
-    # Sanitize the text to remove illegal characters and replace spaces with underscores
-    sanitized_text = re.sub(r'[<>:"/\\|?*\n\r]+', "", text).replace(" ", "_")
     # Get the current time in epoch format
     epoch_time = int(time.time())
     # Return the filename
-    return f"{epoch_time}_{sanitized_text}.png"
+    return f"{epoch_time}_{hashlib.sha256(text.encode()).hexdigest()}.png"
 
 
 # Ensure label directory exists
