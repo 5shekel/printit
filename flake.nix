@@ -52,6 +52,7 @@
                 python -m streamlit run ${./.}/printit.py --server.fileWatcherType none
               '';
               serviceConfig = {
+                WorkingDirectory = "%S/printit";
                 StateDirectory = "printit";
               };
             };
