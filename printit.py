@@ -281,29 +281,8 @@ def list_saved_images(filter_duplicates=True):
     # Sort by modification time (newest first)
     return sorted(unique_images.values(), key=os.path.getmtime, reverse=True)[:history_limit]
 
-
-# Replace the get_fonts function
 def get_fonts():
-    """Return list of fonts with 5x5-Tami.ttf as default"""
-    default_font = "fonts/5x5-Tami.ttf"
-    
-    # Check if our default font exists
-    if os.path.exists(default_font):
-        try:
-            # Verify it's a valid font
-            ImageFont.truetype(default_font, 12)
-            return [default_font]  # Only return our custom font if it exists and works
-        except Exception as e:
-            print(f"Error loading 5x5-Tami.ttf: {e}")
-    
-    # If we get here, either the font doesn't exist or failed to load
-    # Return system fonts as fallback
-    return [
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",  # Linux
-        "C:/Windows/Fonts/arial.ttf",  # Windows
-        "/System/Library/Fonts/Helvetica.ttf",  # macOS
-    ]
-
+    return [ "fonts/" + i for i in os.listdir("fonts/") if i.endswith(".ttf")]
 
 def safe_filename(text):
     # Sanitize the text to remove illegal characters and replace spaces with underscores
