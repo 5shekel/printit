@@ -1308,7 +1308,10 @@ with tab7:
                     with cols[j]:
                         image_path = current_page_images[idx]
                         image = Image.open(image_path)
-                        st.image(image, use_container_width=True)
+                        try:
+                            st.image(image, use_container_width=True)
+                        except:
+                            continue
 
                         filename = os.path.basename(image_path)
                         modified_time = datetime.fromtimestamp(

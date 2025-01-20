@@ -55,6 +55,7 @@
               serviceConfig = {
                 WorkingDirectory = "%S/printit";
                 StateDirectory = "printit";
+                Restart = "always";
               };
             };
           };
