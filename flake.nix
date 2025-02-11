@@ -19,6 +19,7 @@
               streamlit
               pillow
               pyusb
+              flask
               qrcode
               requests
               (brother-ql.overrideAttrs {
@@ -51,6 +52,20 @@
               path = [ pythonWithDeps ];
               script = ''
                 python -m streamlit run ${./.}/printit.py --server.fileWatcherType none
+              '';
+              serviceConfig = {
+                WorkingDirectory = "%S/printit";
+                StateDirectory = "printit";
+                Restart = "always";
+              };
+            };
+            systemd.services.printit-api = {
+              description = "PrintIT now, baby! Now through API!";
+              after = [ "network.target" ];
+              wantedBy = [ config.systemd.defaultUnit ];
+              path = [ pythonWithDeps ];
+              script = ''
+                python ${./.}/botprint.py
               '';
               serviceConfig = {
                 WorkingDirectory = "%S/printit";
