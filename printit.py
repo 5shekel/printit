@@ -286,16 +286,20 @@ def list_saved_images(filter_duplicates=True):
 def get_fonts():
     """Return list of fonts with 5x5-Tami.ttf as default"""
     default_font = "fonts/5x5-Tami.ttf"
-    
+
     # Check if our default font exists
     if os.path.exists(default_font):
+        fonts = []
         try:
+            for f in glob.glob("fonts/*.ttf"):
             # Verify it's a valid font
-            ImageFont.truetype(default_font, 12)
-            return [default_font]  # Only return our custom font if it exists and works
+                ImageFont.truetype(f, 12)
+            # Only return our custom font if it exists and works
+                fonts.append(f)
+            return fonts
         except Exception as e:
             print(f"Error loading 5x5-Tami.ttf: {e}")
-    
+
     # If we get here, either the font doesn't exist or failed to load
     # Return system fonts as fallback
     return [
