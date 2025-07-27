@@ -960,12 +960,34 @@ with tab2:
             # Try to load the font
             test_font = ImageFont.truetype(font, 12)
         except OSError:
-            st.error("5x5-Tami.ttf font not found! Please ensure the fonts directory exists and contains 5x5-Tami.ttf")
-            st.info("You can download it from the project repository")
-            font = None  # Mark font as unavailable
+            # If the selected font fails to load, try to use a working system font
+            working_font = None
+            system_fonts = [
+                "C:/Windows/Fonts/arial.ttf",  # Windows
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",  # Linux
+                "/System/Library/Fonts/Helvetica.ttf",  # macOS
+            ]
             
-        if font is None:
-            st.stop()  # Stop execution if font is not available
+            for sys_font in system_fonts:
+                try:
+                    ImageFont.truetype(sys_font, 12)
+                    working_font = sys_font
+                    break
+                except OSError:
+                    continue
+            
+            if working_font:
+                font = working_font
+                st.warning(f"Custom fonts not available, using system font: {working_font}")
+            else:
+                # If no system fonts work, use PIL's default font
+                try:
+                    test_default = ImageFont.load_default()
+                    font = None  # Will trigger default font usage below
+                    st.warning("No TrueType fonts available, using PIL default font")
+                except Exception:
+                    st.error("Unable to load any fonts. Please check your system font installation.")
+                    st.stop()
 
         # Calculate initial max size with default font
         try:
@@ -1070,12 +1092,16 @@ with tab2:
 
         # Font Size
         try:
-            fnt = ImageFont.truetype(font, font_size)
+            if font is None:
+                # Use PIL's default font if no TrueType font is available
+                fnt = ImageFont.load_default()
+            else:
+                fnt = ImageFont.truetype(font, font_size)
         except OSError:
-            # If the 5x5 font is not found, try to use default system font
+            # If the selected font fails, fall back to default
             try:
                 fnt = ImageFont.load_default()
-                st.warning(f"Font {font} not found, using default font. Please ensure fonts/5x5-Tami.ttf exists.")
+                st.warning(f"Font {font} not found, using default font.")
             except Exception as e:
                 st.error(f"Error loading font: {e}")
         line_spacing = 20  # Adjust this value to set the desired line spacing
