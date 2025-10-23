@@ -285,7 +285,8 @@ def list_saved_images(filter_duplicates=True):
 # Replace the get_fonts function
 def get_fonts():
     """Return list of fonts with 5x5-Tami.ttf as default"""
-    default_font = "fonts/5x5-Tami.ttf"
+    #default_font = "fonts/5x5-Tami.ttf"
+    default_font = "fonts/fake_font.ttf"
     
     # Check if our default font exists
     if os.path.exists(default_font):
@@ -299,7 +300,9 @@ def get_fonts():
     # If we get here, either the font doesn't exist or failed to load
     # Return system fonts as fallback
     return [
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",  # Linux
+        #"/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",  # Linux
+        #"/usr/share/fonts/arial/ARIAL.ttf",  # Linux
+        "/usr/share/fonts/google-carlito-fonts/Carlito-Bold.ttf",  # Linux
         "C:/Windows/Fonts/arial.ttf",  # Windows
         "/System/Library/Fonts/Helvetica.ttf",  # macOS
     ]
@@ -1205,18 +1208,20 @@ with tab4:
     if on:
         picture = st.camera_input("Take a picture")
         if picture is not None:
+            # Convert and process image
             picture = Image.open(picture).convert("RGB")
             grayscale_image, dithered_image = preper_image(picture)
 
-            st.image(dithered_image, caption="Resized and Dithered Image")
-
-            # Save webcam image before printing
+            # Save webcam image immediately after capture
             filename = safe_filename("webcam")
             file_path = os.path.join(label_dir, filename)
             picture.save(file_path, "PNG")
             st.success(f"Webcam photo saved as {filename}")
 
-            # print options
+            # Display processed image
+            st.image(dithered_image, caption="Resized and Dithered Image")
+
+            # Print options
             colc, cold = st.columns(2)
             with colc:
                 if st.button("Print rotated Image", key="print_rotated_webcam"):
@@ -1502,8 +1507,7 @@ with tab8:
         """
         *dithering* is suggested (sometimes inforced) if source is not lineart as grayscale and color look bad at thermal printer
 
-        all uploaded images and generated labels are saved
-        uploaded camera snapshot are NOT saved, only printed.
+        all uploaded images, generated labels, and webcam snapshots are saved
 
         app [code](https://github.com/5shekel/printit)
 
