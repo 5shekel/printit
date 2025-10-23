@@ -51,7 +51,7 @@ def process_print_job(image, printer_info, temp_file_path, rotate=0, dither=Fals
         success = send(
             instructions=instructions,
             printer_identifier=printer_info["identifier"],
-            backend_identifier="pyusb",
+            backend_identifier="pyusb"
         )
         
         if not success:
@@ -60,10 +60,11 @@ def process_print_job(image, printer_info, temp_file_path, rotate=0, dither=Fals
         return True, None
 
     except usb.core.USBError as e:
-        if "timeout error" in str(e):
+        # Treat timeout errors as successful since they often occur after print completion
+        if e.errno == 110:  # Operation timed out
             if debug:
-                print("USB timeout error occurred, but it's okay.")
-            return True, None
+                print("USB timeout occurred - this is normal and the print likely completed")
+            return True, "Print completed (timeout is normal)"
         error_msg = f"USBError encountered: {e}"
         if debug:
             print(error_msg)
@@ -73,4 +74,4 @@ def process_print_job(image, printer_info, temp_file_path, rotate=0, dither=Fals
         error_msg = f"Unexpected error during printing: {str(e)}"
         if debug:
             print(error_msg)
-        return False, error_msg 
+        return False, error_msg
