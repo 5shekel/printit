@@ -9,6 +9,7 @@ import re
 import tempfile
 from datetime import datetime
 import time
+import hashlib
 import qrcode
 from brother_ql.models import ModelsManager
 from brother_ql.backends import backend_factory
@@ -282,42 +283,78 @@ def list_saved_images(filter_duplicates=True):
     return sorted(unique_images.values(), key=os.path.getmtime, reverse=True)[:history_limit]
 
 
-# Replace the get_fonts function
 def get_fonts():
-    """Return list of fonts with 5x5-Tami.ttf as default"""
-    default_font = "fonts/5x5-Tami.ttf"
-    #default_font = "fonts/fake_font.ttf"
-    
+    """Return list of fonts with 5x5-Tami.ttf as default, followed by system fonts"""
     fonts = []
-    # Check if our default font exists
-    if os.path.exists(default_font):
-        try:
-            # Verify it's a valid font
-            ImageFont.truetype(default_font, 12)
-            fonts.append(default_font)
-        except Exception as e:
-            print(f"Error loading 5x5-Tami.ttf: {e}")
     
-    # Return system fonts as fallback
-    for p in [
-        #"/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",  # Linux
-        #"/usr/share/fonts/arial/ARIAL.ttf",  # Linux
-        "/usr/share/fonts/google-carlito-fonts/Carlito-Bold.ttf",  # Linux
-        "C:/Windows/Fonts/arial.ttf",  # Windows
-        "/System/Library/Fonts/Helvetica.ttf",  # macOS
-    ]:
-        fonts.append(p)
-
-    return fonts
+    # Start with default font if it exists
+    default_font = "fonts/5x5-Tami.ttf"
+    if os.path.exists(default_font):
+        fonts.append(default_font)
+    
+    # Add other custom fonts from fonts directory
+    try:
+        for font_file in os.listdir("fonts/"):
+            if font_file.endswith(".ttf") and font_file != "5x5-Tami.ttf":
+                fonts.append("fonts/" + font_file)
+    except OSError:
+        pass  # fonts directory doesn't exist or isn't accessible
+    
+    # Add system fonts based on operating system
+    import platform
+    system = platform.system()
+    
+    system_font_dirs = []
+    if system == "Windows":
+        system_font_dirs = [
+            "C:/Windows/Fonts/",
+            "C:/Windows/System32/Fonts/"
+        ]
+    elif system == "Darwin":  # macOS
+        system_font_dirs = [
+            "/System/Library/Fonts/",
+            "/Library/Fonts/",
+            "/Users/" + os.environ.get("USER", "") + "/Library/Fonts/"
+        ]
+    elif system == "Linux":
+        system_font_dirs = [
+            "/usr/share/fonts/",
+            "/usr/local/share/fonts/",
+            "/home/" + os.environ.get("USER", "") + "/.fonts/",
+            "/home/" + os.environ.get("USER", "") + "/.local/share/fonts/"
+        ]
+    
+    # Scan system font directories
+    for font_dir in system_font_dirs:
+        if os.path.exists(font_dir):
+            try:
+                # Recursively search for .ttf files
+                for root, dirs, files in os.walk(font_dir):
+                    for file in files:
+                        if file.lower().endswith('.ttf'):
+                            full_path = os.path.join(root, file)
+                            # Only add if not already in list
+                            if full_path not in fonts:
+                                fonts.append(full_path)
+            except (OSError, PermissionError):
+                continue  # Skip directories we can't access
+    
+    # Remove duplicates while preserving order
+    seen = set()
+    unique_fonts = []
+    for font in fonts:
+        if font not in seen:
+            seen.add(font)
+            unique_fonts.append(font)
+    
+    return unique_fonts if unique_fonts else ["fonts/5x5-Tami.ttf"]  # Fallback to default
 
 
 def safe_filename(text):
-    # Sanitize the text to remove illegal characters and replace spaces with underscores
-    sanitized_text = re.sub(r'[<>:"/\\|?*\n\r]+', "", text).replace(" ", "_")
     # Get the current time in epoch format
     epoch_time = int(time.time())
     # Return the filename
-    return f"{epoch_time}_{sanitized_text}.png"
+    return f"{epoch_time}_{hashlib.sha256(text.encode()).hexdigest()}.png"
 
 
 # Ensure label directory exists
@@ -951,23 +988,50 @@ with tab2:
 
         # init some font vars
         fonts = get_fonts()
-        font = fonts[0]  # Default to first available font
         alignment = "center"
         
         # Initialize font selection in session state if not already present
         if "selected_font" not in st.session_state:
             st.session_state.selected_font = fonts[0]
+        
+        # Ensure the selected font is still in the current fonts list
+        if st.session_state.selected_font not in fonts:
+            st.session_state.selected_font = fonts[0]
+        
+        font = st.session_state.selected_font  # Use session state font
 
         try:
             # Try to load the font
             test_font = ImageFont.truetype(font, 12)
         except OSError:
-            st.error("5x5-Tami.ttf font not found! Please ensure the fonts directory exists and contains 5x5-Tami.ttf")
-            st.info("You can download it from the project repository")
-            font = None  # Mark font as unavailable
+            # If the selected font fails to load, try to use a working system font
+            working_font = None
+            system_fonts = [
+                "C:/Windows/Fonts/arial.ttf",  # Windows
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",  # Linux
+                "/System/Library/Fonts/Helvetica.ttf",  # macOS
+            ]
             
-        if font is None:
-            st.stop()  # Stop execution if font is not available
+            for sys_font in system_fonts:
+                try:
+                    ImageFont.truetype(sys_font, 12)
+                    working_font = sys_font
+                    break
+                except OSError:
+                    continue
+            
+            if working_font:
+                font = working_font
+                st.warning(f"Custom fonts not available, using system font: {working_font}")
+            else:
+                # If no system fonts work, use PIL's default font
+                try:
+                    test_default = ImageFont.load_default()
+                    font = None  # Will trigger default font usage below
+                    st.warning("No TrueType fonts available, using PIL default font")
+                except Exception:
+                    st.error("Unable to load any fonts. Please check your system font installation.")
+                    st.stop()
 
         # Calculate initial max size with default font
         try:
@@ -1028,12 +1092,16 @@ with tab2:
         if fontstuff:
             # Font Selection with session state
             with col1:
-                font = st.selectbox(
+                selected_font = st.selectbox(
                     "Choose your font",
                     fonts,
                     index=fonts.index(st.session_state.selected_font),
+                    key="font_selector"
                 )
-                st.session_state.selected_font = font
+                # Update session state and font variable
+                if selected_font != st.session_state.selected_font:
+                    st.session_state.selected_font = selected_font
+                font = selected_font
 
             # Alignment
             with col2:
@@ -1072,12 +1140,16 @@ with tab2:
 
         # Font Size
         try:
-            fnt = ImageFont.truetype(font, font_size)
+            if font is None:
+                # Use PIL's default font if no TrueType font is available
+                fnt = ImageFont.load_default()
+            else:
+                fnt = ImageFont.truetype(font, font_size)
         except OSError:
-            # If the 5x5 font is not found, try to use default system font
+            # If the selected font fails, fall back to default
             try:
                 fnt = ImageFont.load_default()
-                st.warning(f"Font {font} not found, using default font. Please ensure fonts/5x5-Tami.ttf exists.")
+                st.warning(f"Font {font} not found, using default font.")
             except Exception as e:
                 st.error(f"Error loading font: {e}")
         line_spacing = 20  # Adjust this value to set the desired line spacing
@@ -1118,53 +1190,54 @@ with tab2:
             d.text((x, y), line, font=fnt, fill=(0, 0, 0))
             y += text_height + line_spacing
 
-        # Save the label image
+        # QR code
+        qr = qrcode.QRCode(border=0)
+
+        qrurl = st.text_input(
+            "add a QRcode to your sticker",
+        )
+        if qrurl:
+            # we have text generate qr
+            qr.add_data(qrurl)
+            qr.make(fit=True)
+            imgqr = qr.make_image(fill_color="black", back_color="white")
+
+            # save to image
+            # add random 4 letetrs to file name
+            # letters = string.ascii_lowercase
+            # random_string = ''.join(random.choice(letters) for i in range(4))
+            # qrimgpath = os.path.join('temp', "qr_" + random_string + '.png')
+            # imgqr.save(qrimgpath, "PNG")
+
+            if imgqr and img:
+                # add qr below the label
+                imgqr = img_concat_v(img, imgqr)
+                st.image(imgqr, use_container_width=True)
+                if st.button("Print sticker+qr", key="print_sticker_qr"):
+                    print_image(imgqr)
+            elif imgqr and not (img):
+                if st.button("Print sticker", key="print_qr_only"):
+                    print_image(imgqr)
+
+        if text and not (qrurl):
+            st.image(img, use_container_width=True)
+            if st.button("Print sticker", key="print_text_only"):
+                print_image(img)  # Needs definition
+                st.success("sticker sent to printer")
+        
+        st.markdown(
+            """
+                    * label will automaticly resize to fit the longest line, so use linebreaks.
+                    * on pc `ctrl+enter` will submit, on mobile click outside the `text_area` to process.
+                    """
+        )
+        
+        # Save the label image - moved to bottom
         if text != "write something":
             filename = safe_filename(text)
             file_path = os.path.join(label_dir, filename)
             img.save(file_path, "PNG")
             st.success(f"Label saved as {filename}")
-
-    # QR code
-    qr = qrcode.QRCode(border=0)
-
-    qrurl = st.text_input(
-        "add a QRcode to your sticker",
-    )
-    if qrurl:
-        # we have text generate qr
-        qr.add_data(qrurl)
-        qr.make(fit=True)
-        imgqr = qr.make_image(fill_color="black", back_color="white")
-
-        # save to image
-        # add random 4 letetrs to file name
-        # letters = string.ascii_lowercase
-        # random_string = ''.join(random.choice(letters) for i in range(4))
-        # qrimgpath = os.path.join('temp', "qr_" + random_string + '.png')
-        # imgqr.save(qrimgpath, "PNG")
-
-        if imgqr and img:
-            # add qr below the label
-            imgqr = img_concat_v(img, imgqr)
-            st.image(imgqr, use_container_width=True)
-            if st.button("Print sticker+qr", key="print_sticker_qr"):
-                print_image(imgqr)
-        elif imgqr and not (img):
-            if st.button("Print sticker", key="print_qr_only"):
-                print_image(imgqr)
-
-    if text and not (qrurl):
-        st.image(img, use_container_width=True)
-        if st.button("Print sticker", key="print_text_only"):
-            print_image(img)  # Needs definition
-            st.success("sticker sent to printer")
-    st.markdown(
-        """
-                * label will automaticly resize to fit the longest line, so use linebreaks.
-                * on pc `ctrl+enter` will submit, on mobile click outside the `text_area` to process.
-                """
-    )
 
 # text2img
 with tab3:
