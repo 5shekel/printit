@@ -86,3 +86,21 @@ to get the brother_ql lib to detect the printer, you need to install a usb filte
  - install the filter 'lib-winUSB` ,replacing the ql-XXXX driver
  - replug the printer
 
+
+### update streamlit
+
+streamlit had made some update with handling widths, `pip install --upgrade streamlit` if you see something in the line of 
+
+```
+Exception in tab Label: '<=' not supported between instances of 'str' and 'int'
+Traceback (most recent call last):
+  File "/home/pi/stikka-factory/printit.py", line 304, in <module>
+    label_module.render(
+  File "/home/pi/stikka-factory/tabs/label.py", line 256, in render
+    st.image(img, width='stretch')
+  File "/home/pi/printit/venv/lib/python3.11/site-packages/streamlit/runtime/metrics_util.py", line 410, in wrapped_func
+    result = non_optional_func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pi/printit/venv/lib/python3.11/site-packages/streamlit/elements/image.py", line 154, in image
+    WidthBehavior.ORIGINAL if (width is None or width <= 0) else width
+``` 
