@@ -1,0 +1,30 @@
+# Sticker Factory Configuration
+# This file contains application settings (non-sensitive)
+# API keys should be in .streamlit/secrets.toml
+
+[app]
+title = "STIKKA FACTORY"
+label_type = "62"
+
+[ui]
+history_limit = 15
+items_per_page = 5
+queue_view = true
+
+[txt2img]
+# URL for Stable Diffusion API endpoint
+url = "http://localhost:7860"
+
+[tabs]
+# Enable or disable tabs by setting them to true or false
+# Order in this list determines tab order in the app
+enabled = [
+    "Label",
+    "Sticker",
+    "Sticker Pro",
+    "Text2image",
+    "Webcam",
+    "Cat",
+    "History",
+    "FAQ",
+]

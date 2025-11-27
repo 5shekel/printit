@@ -1,0 +1,181 @@
+"""Printer handling and detection utilities for the Sticker Factory."""
+
+import subprocess
+import tempfile
+import time
+from brother_ql.models import ModelsManager
+from brother_ql.backends import backend_factory
+from brother_ql import labels
+import streamlit as st
+from job_queue import print_queue
+
+
+def find_and_parse_printer():
+    """Find and parse Brother QL printer information."""
+    model_manager = ModelsManager()
+    
+    print("Searching for Brother QL printer...")
+
+    for backend_name in ["pyusb", "linux_kernel"]:
+        try:
+            print(f"Trying backend: {backend_name}")
+            backend = backend_factory(backend_name)
+            available_devices = backend["list_available_devices"]()
+            print(f"Found {len(available_devices)} devices with {backend_name} backend")
+            
+            for printer in available_devices:
+                print(f"Found device: {printer}")
+                identifier = printer["identifier"]
+                parts = identifier.split("/")
+
+                if len(parts) < 4:
+                    print(f"Skipping device with invalid identifier format: {identifier}")
+                    continue
+
+                protocol = parts[0]
+                device_info = parts[2]
+                serial_number = parts[3]
+                
+                try:
+                    vendor_id, product_id = device_info.split(":")
+                except ValueError:
+                    print(f"Invalid device info format: {device_info}")
+                    continue
+
+                model = "QL-570"
+                
+                try:
+                    product_id_int = int(product_id, 16)
+                    for m in model_manager.iter_elements():
+                        if m.product_id == product_id_int:
+                            model = m.identifier
+                            break
+                    print(f"Matched printer model: {model}")
+                except ValueError:
+                    print(f"Invalid product ID format: {product_id}")
+                    continue
+
+                printer_info = {
+                    "identifier": identifier,
+                    "backend": backend_name,
+                    "model": model,
+                    "protocol": protocol,
+                    "vendor_id": vendor_id,
+                    "product_id": product_id,
+                    "serial_number": serial_number,
+                }
+                print(f"Found printer: {printer_info}")
+                return printer_info
+                
+        except Exception as e:
+            print(f"Error with backend {backend_name}: {str(e)}")
+            continue
+
+    print("No Brother QL printer found")
+    return None
+
+
+def get_printer_label_info():
+    """Get label information from printer or use defaults."""
+    printer_info = find_and_parse_printer()
+    if not printer_info:
+        return None, "No printer found"
+    
+    try:
+        cmd = f"brother_ql -b pyusb --model {printer_info['model']} -p {printer_info['identifier']} status"
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        
+        if result.returncode == 0 and result.stdout:
+            status_output = result.stdout
+            print(f"Printer status output: {status_output}")
+            
+            media_width_mm = None
+            
+            for line in status_output.split('\n'):
+                if 'Media size:' in line:
+                    try:
+                        width_str = line.split(':')[1].split('x')[0].strip()
+                        media_width_mm = int(width_str)
+                        print(f"Detected media width: {media_width_mm}mm")
+                    except ValueError:
+                        continue
+            
+            if media_width_mm is not None:
+                label_sizes = {
+                    12: "12", 29: "29", 38: "38", 50: "50", 54: "54", 
+                    62: "62", 102: "102", 103: "103", 104: "104"
+                }
+                
+                if media_width_mm in label_sizes:
+                    label_type = label_sizes[media_width_mm]
+                    return label_type, f"Detected {label_type} ({media_width_mm}mm)"
+        
+        if 'model' in printer_info:
+            model_defaults = {
+                'QL-500': "62", 'QL-550': "62", 'QL-560': "62", 'QL-570': "62",
+                'QL-580N': "62", 'QL-650TD': "62", 'QL-700': "62", 'QL-710W': "62",
+                'QL-720NW': "62", 'QL-800': "62", 'QL-810W': "62", 'QL-820NWB': "62",
+                'QL-1050': "102", 'QL-1060N': "102",
+            }
+            if printer_info['model'] in model_defaults:
+                return model_defaults[printer_info['model']], f"Using default for {printer_info['model']}"
+        
+        return "62", "Using safe default width"
+        
+    except Exception as e:
+        print(f"Error getting printer status: {str(e)}")
+        return "62", f"Error getting printer status, using default"
+
+
+def get_label_width(label_type):
+    """Get the pixel width of a label type."""
+    label_definitions = labels.ALL_LABELS
+    for label in label_definitions:
+        if label.identifier == label_type:
+            width = label.dots_printable[0]
+            print(f"Label type {label_type} width: {width} dots")
+            return width
+    raise ValueError(f"Label type {label_type} not found in label definitions")
+
+
+def print_image(image, rotate=0, dither=False, label_type="62"):
+    """Queue a print job."""
+    temp_dir = tempfile.gettempdir()
+    import os
+    os.makedirs(temp_dir, exist_ok=True)
+
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False, dir=temp_dir) as temp_file:
+        temp_file_path = temp_file.name
+        image.save(temp_file_path, "PNG")
+        print(f"Image saved to: {temp_file_path}")
+
+    printer_info = find_and_parse_printer()
+    if not printer_info:
+        st.error("No Brother QL printer found. Please check the connection and try again.")
+        return False
+
+    print(f"Using label type: {label_type}")
+
+    job_id = print_queue.add_job(
+        image,
+        rotate=rotate,
+        dither=dither,
+        printer_info=printer_info,
+        temp_file_path=temp_file_path,
+        label_type=label_type
+    )
+
+    status = print_queue.get_job_status(job_id)
+    status_container = st.empty()
+    
+    while status.status in ["pending", "processing"]:
+        status_container.info(f"Print job status: {status.status}")
+        time.sleep(0.5)
+        status = print_queue.get_job_status(job_id)
+
+    if status.status == "completed":
+        status_container.success("Print job completed successfully!")
+        return True
+    else:
+        status_container.error(f"Print job failed: {status.error}")
+        return False

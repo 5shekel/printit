@@ -4,4 +4,5 @@ brother-ql-inventree @ git+https://github.com/matmair/brother_ql-inventree@maste
 pyusb>=1.2.1
 qrcode>=7.4.2
 requests>=2.31.0
+PyMuPDF>=1.23.0
 
