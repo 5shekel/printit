@@ -40,10 +40,6 @@ for label in labels.ALL_LABELS:
         print(f"Label type {label_type} width: {label_width} dots")
         break
 
-# ============================================================================
-# PRINTER DETECTION AND CONFIGURATION
-# ============================================================================
-
 def list_saved_images(filter_duplicates=True):
     temp_files = glob.glob(os.path.join("temp", "*.[pj][np][g]*"))
     label_files = glob.glob(os.path.join("labels", "*.[pj][np][g]*"))
