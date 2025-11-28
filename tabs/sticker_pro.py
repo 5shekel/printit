@@ -4,7 +4,78 @@ import streamlit as st
 import requests
 import io
 import os
-from PIL import Image, ImageOps
+from PIL import Image, ImageOps, ImageDraw, ImageFont
+
+
+def make_meme_text(image, top_text, bottom_text, font_size=20, outline_width=3):
+    """Add Impact-style meme text to top and bottom of image."""
+    if not top_text and not bottom_text:
+        return image
+    
+    # Create a copy to draw on
+    meme_image = image.copy()
+    draw = ImageDraw.Draw(meme_image)
+    
+    # Use provided font size
+    font_path = None
+    
+    # Try common Impact font locations
+    potential_paths = [
+        "C:/Windows/Fonts/impact.ttf",
+        "/System/Library/Fonts/Impact.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+    ]
+    
+    for path in potential_paths:
+        if os.path.exists(path):
+            font_path = path
+            break
+    
+    try:
+        if font_path:
+            font = ImageFont.truetype(font_path, font_size)
+        else:
+            font = ImageFont.load_default()
+    except Exception:
+        font = ImageFont.load_default()
+    
+    # Text color: white with black outline (classic meme style)
+    text_color = "white"
+    outline_color = "black"
+    
+    def draw_text_with_outline(draw, text, position, font, text_color, outline_color, outline_width):
+        """Draw text with outline effect."""
+        x, y = position
+        # Get text bounding box for proper centering
+        bbox = draw.textbbox((0, 0), text, font=font)
+        text_width = bbox[2] - bbox[0]
+        text_height = bbox[3] - bbox[1]
+        
+        # Center text 
+        x = x - text_width // 2
+        y = y - text_height // 2
+        
+        # Draw outline
+        for adj_x in range(-outline_width, outline_width + 1):
+            for adj_y in range(-outline_width, outline_width + 1):
+                if adj_x != 0 or adj_y != 0:
+                    draw.text((x + adj_x, y + adj_y), text, font=font, fill=outline_color)
+        # Draw main text
+        draw.text((x, y), text, font=font, fill=text_color)
+    
+    # Draw top text
+    if top_text:
+        top_y = int(meme_image.height * 0.10)
+        center_x = meme_image.width // 2
+        draw_text_with_outline(draw, top_text.upper(), (center_x, top_y), font, text_color, outline_color, outline_width)
+    
+    # Draw bottom text
+    if bottom_text:
+        bottom_y = int(meme_image.height * 0.85)
+        center_x = meme_image.width // 2
+        draw_text_with_outline(draw, bottom_text.upper(), (center_x, bottom_y), font, text_color, outline_color, outline_width)
+    
+    return meme_image
 
 
 def render(print_image, apply_threshold, add_border, apply_histogram_equalization, 
@@ -86,7 +157,7 @@ def render(print_image, apply_threshold, add_border, apply_histogram_equalizatio
             print_choice = st.radio("Choose which image to print/save:", ("Original", "Threshold"), key="sticker_pro_choice")
             
             st.text("General options:")
-            mirror_checkbox = st.checkbox("Mirror Mask", value=False, key="sticker_pro_mirror")
+            mirror_checkbox = st.checkbox("Mirror Image", value=False, key="sticker_pro_mirror")
             invert_checkbox = st.checkbox("Invert Image", value=False, key="sticker_pro_invert")
             border_checkbox = st.checkbox(
                 "Show border in preview", 
@@ -100,6 +171,13 @@ def render(print_image, apply_threshold, add_border, apply_histogram_equalizatio
                 key="sticker_pro_equalize",
                 help="Enhance image contrast"
             )
+            meme_checkbox = st.checkbox(
+                "Make it a meme!", 
+                value=False, 
+                key="sticker_pro_meme",
+                help="Adds Impact font style text at top and bottom of image"
+            )
+        
             
             # Add target width in mm option
             target_width_mm = st.number_input("Target Width (mm)", min_value=0, value=0, key="sticker_pro_width")
@@ -148,10 +226,24 @@ def render(print_image, apply_threshold, add_border, apply_histogram_equalizatio
                 display_image = apply_threshold(image, threshold)
                 grayscale_image = image.convert("L")
             
+            # Get meme text if checkbox is enabled
+            meme_top_text = ""
+            meme_bottom_text = ""
+            if meme_checkbox:
+                meme_font_size = st.slider("Meme Font Size", 10, 100, 20, key="sticker_pro_meme_font_size_final")
+                meme_top_text = st.text_input("Top Text", key="sticker_pro_meme_top")
+                meme_bottom_text = st.text_input("Bottom Text", key="sticker_pro_meme_bottom")
+                meme_outline_width = st.slider("Meme Outline Width", 1, 10, 3, key="sticker_pro_meme_outline_width")
+
             # Create a copy for display with border if needed
             preview_image = display_image.copy()
             if border_checkbox:
                 preview_image = add_border(preview_image)
+
+            if meme_checkbox and (meme_top_text or meme_bottom_text):
+                print(type(meme_outline_width))
+                print(type(meme_font_size))
+                preview_image = make_meme_text(preview_image, meme_top_text, meme_bottom_text, meme_font_size, meme_outline_width)
         
         with col2:
             st.image(preview_image, caption="Preview", width='stretch')
@@ -170,8 +262,14 @@ def render(print_image, apply_threshold, add_border, apply_histogram_equalizatio
         
         if st.button(print_button_label, key="sticker_pro_print"):
             rotate = 90 if (rotate_checkbox and not rotate_disabled) else 0
+            
+            # Apply meme text to the image being printed if enabled
+            print_display_image = display_image.copy()
+            if meme_checkbox and (meme_top_text or meme_bottom_text):
+                print_display_image = make_meme_text(print_display_image, meme_top_text, meme_bottom_text, meme_font_size, meme_outline_width)
+            
             if print_choice == "Original":
-                print_image(grayscale_image, rotate=rotate, dither=dither)
+                print_image(print_display_image, rotate=rotate, dither=dither)
             else:
-                print_image(display_image, rotate=rotate, dither=False)
+                print_image(print_display_image, rotate=rotate, dither=False)
             st.success("Print job sent to printer!")
