@@ -1,100 +1,35 @@
 import streamlit as st
-from PIL import Image, ImageDraw, ImageFont, PngImagePlugin, ImageOps
-import requests
-import io
 import glob
-import base64
 import os
 import re
-import tempfile
-from datetime import datetime
 import time
 import hashlib
-import qrcode
-from brother_ql.models import ModelsManager
-from brother_ql.backends import backend_factory
-from brother_ql.raster import BrotherQLRaster
-from brother_ql.conversion import convert
-from brother_ql.backends.helpers import send
 from brother_ql import labels
-import usb.core
-import subprocess
-from job_queue import print_queue
+
+
+# Tabs get imported only when enabled in config.toml
+
 
 # Import image utilities
 from image_utils import (
-    preper_image as prepare_image,
+    preper_image,
     apply_threshold,
-    resize_image_to_width as resize_image_to_width_util,
+    resize_image_to_width,
     add_border,
     apply_histogram_equalization,
-    img_concat_v as img_concat_v_util,
+    img_concat_v,
 )
-
-# Import printer utilities
 from printer_utils import (
-    find_and_parse_printer,
-    get_printer_label_info,
-    get_label_width as get_label_width_util,
-    print_image as print_image_util,
+    print_image,
+    get_label_type,
 )
 
 # Import configuration
 from config import (
     get_enabled_tabs,
-    LABEL_TYPE,
     APP_TITLE,
     HISTORY_LIMIT,
-    ITEMS_PER_PAGE,
-    QUEUE_VIEW,
-    TXT2IMG_URL,
 )
-
-# Import tab modules
-import tabs.sticker as sticker_module
-import tabs.label as label_module
-import tabs.text2image as text2image_module
-import tabs.webcam as webcam_module
-import tabs.cat as cat_module
-import tabs.sticker_pro as sticker_pro_module
-import tabs.history as history_module
-import tabs.faq as faq_module
-
-# Session state initialization
-if 'label_type' not in st.session_state:
-    st.session_state.label_type = None
-    st.session_state.label_status = None
-
-# ============================================================================
-# PRINTER DETECTION AND CONFIGURATION
-# ============================================================================
-
-def get_label_type():
-    """Get label type from printer, config, or default."""
-    if st.session_state.label_type is not None:
-        return st.session_state.label_type, st.session_state.label_status
-
-    detected_label, status_message = get_printer_label_info()
-    if detected_label:
-        print(f"Using detected label type: {detected_label} - {status_message}")
-        st.session_state.label_type = detected_label
-        st.session_state.label_status = status_message
-        return detected_label, status_message
-
-    if LABEL_TYPE:
-        status = "Using configured label_type from config.toml"
-        print(f"Using configured label type from config.toml: {LABEL_TYPE}")
-        st.session_state.label_type = LABEL_TYPE
-        st.session_state.label_status = status
-        return LABEL_TYPE, status
-
-    default_type = "62"
-    status = "Using default label type 62"
-    print("No label type detected or configured, using default 62")
-    st.warning("⚠️ No label type detected from printer and none configured in config.toml. Using default label type 62")
-    st.session_state.label_type = default_type
-    st.session_state.label_status = status
-    return default_type, status
 
 # Get label type and width
 label_type, label_status = get_label_type()
@@ -104,10 +39,6 @@ for label in labels.ALL_LABELS:
         label_width = label.dots_printable[0]
         print(f"Label type {label_type} width: {label_width} dots")
         break
-
-# ============================================================================
-# UTILITY FUNCTIONS
-# ============================================================================
 
 def list_saved_images(filter_duplicates=True):
     temp_files = glob.glob(os.path.join("temp", "*.[pj][np][g]*"))
@@ -194,69 +125,6 @@ def safe_filename(text):
 label_dir = "labels"
 os.makedirs(label_dir, exist_ok=True)
 
-def generate_image(prompt, steps):
-    payload = {"prompt": prompt, "steps": steps, "width": label_width}
-
-    if TXT2IMG_URL == "http://localhost:7860":
-        st.warning("Using default Stable Diffusion URL (http://localhost:7860). Configure txt2img_url in .streamlit/secrets.toml for custom endpoint.")
-
-    try:
-        response = requests.post(url=f'{TXT2IMG_URL}/sdapi/v1/txt2img', json=payload)
-        response.raise_for_status()
-
-        print("Raw response content:", response.content)
-
-        r = response.json()
-
-        if r["images"]:
-            first_image = r["images"][0]
-            base64_data = first_image.split("base64,")[1] if "base64," in first_image else first_image
-            image = Image.open(io.BytesIO(base64.b64decode(base64_data)))
-
-            png_payload = {"image": "data:image/png;base64," + first_image}
-            response2 = requests.post(url=f"{TXT2IMG_URL}/sdapi/v1/png-info", json=png_payload)
-            response2.raise_for_status()
-
-            pnginfo = PngImagePlugin.PngInfo()
-            info = response2.json().get("info")
-            if info:
-                pnginfo.add_text("parameters", str(info))
-            current_date = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            temp_dir = "temp"
-            os.makedirs(temp_dir, exist_ok=True)
-            filename = os.path.join(temp_dir, "txt2img_" + current_date + ".png")
-            image.save(filename, pnginfo=pnginfo)
-
-            return image
-        else:
-            print("No images found in the response")
-            return None
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        return None
-
-def preper_image(image, label_width=label_width):
-    """Wrapper for image preparation - calls image_utils.preper_image"""
-    return prepare_image(image, label_width)
-
-
-def resize_image_to_width(image, target_width_mm):
-    """Wrapper for image resizing - calls image_utils.resize_image_to_width"""
-    return resize_image_to_width_util(image, target_width_mm, label_width)
-
-
-def img_concat_v(im1, im2, image_width=label_width):
-    """Wrapper for image concatenation - calls image_utils.img_concat_v"""
-    return img_concat_v_util(im1, im2, image_width)
-
-
-def print_image(image, rotate=0, dither=False):
-    """Wrapper for print_image - calls printer_utils.print_image"""
-    label_type, _ = get_label_type()
-    return print_image_util(image, rotate=rotate, dither=dither, label_type=label_type)
-
-
 def find_url(string):
     url_pattern = re.compile(r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+")
     urls = re.findall(url_pattern, string)
@@ -295,12 +163,15 @@ for tab_obj, tab_name in zip(tab_objects, enabled_tab_names):
     with tab_obj:
         try:
             if tab_name == "Sticker":
+                import tabs.sticker as sticker_module
                 sticker_module.render(
+                    label_width=label_width,
                     preper_image=preper_image,
                     print_image=print_image,
                     safe_filename=safe_filename,
                 )
             elif tab_name == "Label":
+                import tabs.label as label_module
                 label_module.render(
                     label_type=label_type,
                     label_width=label_width,
@@ -313,6 +184,7 @@ for tab_obj, tab_name in zip(tab_objects, enabled_tab_names):
                     img_concat_v=img_concat_v,
                 )
             elif tab_name == "Text2image":
+                import tabs.text2image as text2image_module
                 # For text2image, we need to define submit function
                 def submit():
                     st.session_state.prompt = st.session_state.widget
@@ -326,11 +198,13 @@ for tab_obj, tab_name in zip(tab_objects, enabled_tab_names):
                 
                 text2image_module.render(
                     submit_func=submit,
-                    generate_image=generate_image,
+                    generate_image_func=text2image_module.generate_image,
                     preper_image=preper_image,
                     print_image=print_image,
+                    label_width=label_width,
                 )
             elif tab_name == "Webcam":
+                import tabs.webcam as webcam_module
                 webcam_module.render(
                     preper_image=preper_image,
                     print_image=print_image,
@@ -338,13 +212,16 @@ for tab_obj, tab_name in zip(tab_objects, enabled_tab_names):
                     label_dir=label_dir,
                 )
             elif tab_name == "Cat":
+                import tabs.cat as cat_module
                 cat_module.render(
                     preper_image=preper_image,
                     print_image=print_image,
                 )
             elif tab_name == "FAQ":
+                import tabs.faq as faq_module
                 faq_module.render()
             elif tab_name == "Sticker Pro":
+                import tabs.sticker_pro as sticker_pro_module    
                 sticker_pro_module.render(
                     print_image=print_image,
                     apply_threshold=apply_threshold,
@@ -355,6 +232,7 @@ for tab_obj, tab_name in zip(tab_objects, enabled_tab_names):
                     label_width=label_width,
                 )
             elif tab_name == "History":
+                import tabs.history as history_module
                 history_module.render(
                     list_saved_images=list_saved_images,
                     label_dir=label_dir,

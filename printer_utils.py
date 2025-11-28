@@ -6,9 +6,14 @@ import time
 from brother_ql.models import ModelsManager
 from brother_ql.backends import backend_factory
 from brother_ql import labels
+from brother_ql.raster import BrotherQLRaster
+from brother_ql.conversion import convert
+from brother_ql.backends.helpers import send
+import usb.core
+
 import streamlit as st
 from job_queue import print_queue
-
+from config import LABEL_TYPE
 
 def find_and_parse_printer():
     """Find and parse Brother QL printer information."""
@@ -179,3 +184,108 @@ def print_image(image, rotate=0, dither=False, label_type="62"):
     else:
         status_container.error(f"Print job failed: {status.error}")
         return False
+
+
+def process_print_job(image, printer_info, temp_file_path, rotate=0, dither=False, label_type="102", debug=False):
+    """
+    Process a single print job.
+    Returns (success, error_message)
+    """
+    # Get debug flag from secrets if not explicitly passed
+    if not debug and 'debug' in st.secrets:
+        debug = st.secrets['debug']
+
+    try:
+        # Prepare the image for printing
+        qlr = BrotherQLRaster(printer_info["model"])
+        
+        # Debug print before conversion
+        if debug:
+            print(f"Starting print job with label_type: {label_type}")
+        
+        instructions = convert(
+            qlr=qlr,
+            images=[temp_file_path],
+            label=label_type,
+            rotate=rotate,
+            threshold=70,
+            dither=dither,
+            compress=True,
+            red=False,
+            dpi_600=False,
+            hq=False,
+            cut=True,
+        )
+
+        # Debug logging
+        if debug:
+            print(f"""
+            Print parameters:
+            - Label type: {label_type}
+            - Rotate: {rotate}
+            - Dither: {dither}
+            - Model: {printer_info['model']}
+            - Backend: {printer_info['backend']}
+            - Identifier: {printer_info['identifier']}
+            """)
+
+        # Try to print using Python API
+        success = send(
+            instructions=instructions,
+            printer_identifier=printer_info["identifier"],
+            backend_identifier="pyusb"
+        )
+        
+        if not success:
+            return False, "Failed to print using Python API"
+
+        return True, None
+
+    except usb.core.USBError as e:
+        # Treat timeout errors as successful since they often occur after print completion
+        if e.errno == 110:  # Operation timed out
+            if debug:
+                print("USB timeout occurred - this is normal and the print likely completed")
+            return True, "Print completed (timeout is normal)"
+        error_msg = f"USBError encountered: {e}"
+        if debug:
+            print(error_msg)
+        return False, error_msg
+
+    except Exception as e:
+        error_msg = f"Unexpected error during printing: {str(e)}"
+        if debug:
+            print(error_msg)
+        return False, error_msg
+
+
+def get_label_type():
+    """Get label type from printer, config, or default."""
+    if 'label_type' not in st.session_state:
+        st.session_state.label_type = None
+        st.session_state.label_status = None
+    
+    if st.session_state.label_type is not None:
+        return st.session_state.label_type, st.session_state.label_status
+
+    detected_label, status_message = get_printer_label_info()
+    if detected_label:
+        print(f"Using detected label type: {detected_label} - {status_message}")
+        st.session_state.label_type = detected_label
+        st.session_state.label_status = status_message
+        return detected_label, status_message
+
+    if LABEL_TYPE:
+        status = "Using configured label_type from config.toml"
+        print(f"Using configured label type from config.toml: {LABEL_TYPE}")
+        st.session_state.label_type = LABEL_TYPE
+        st.session_state.label_status = status
+        return LABEL_TYPE, status
+
+    default_type = "62"
+    status = "Using default label type 62"
+    print("No label type detected or configured, using default 62")
+    st.warning("⚠️ No label type detected from printer and none configured in config.toml. Using default label type 62")
+    st.session_state.label_type = default_type
+    st.session_state.label_status = status
+    return default_type, status

@@ -1,7 +1,6 @@
 """Image processing and conversion utilities for the Sticker Factory."""
 
-from PIL import Image, ImageOps, ImageDraw, ImageFont
-import io
+from PIL import Image, ImageOps
 
 
 def preper_image(image, label_width):

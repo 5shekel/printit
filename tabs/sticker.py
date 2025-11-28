@@ -30,7 +30,7 @@ def fetch_image_from_url(url):
         return None
 
 
-def render(preper_image, print_image, safe_filename):
+def render(preper_image, print_image, safe_filename,label_width):
     """Render the Sticker tab."""
     st.subheader(":printer: a sticker")
 
@@ -39,7 +39,7 @@ def render(preper_image, print_image, safe_filename):
         image_path = st.session_state.selected_image_path
         try:
             image_to_process = Image.open(image_path).convert("RGB")
-            grayscale_image, dithered_image = preper_image(image_to_process)
+            grayscale_image, dithered_image = preper_image(image_to_process, label_width=label_width)
             
             st.info(f"Image loaded from history: {os.path.basename(image_path)}")
             
@@ -122,7 +122,7 @@ def render(preper_image, print_image, safe_filename):
             image_to_process = Image.open(uploaded_image).convert("RGB")
 
         if image_to_process:
-            grayscale_image, dithered_image = preper_image(image_to_process)
+            grayscale_image, dithered_image = preper_image(image_to_process, label_width=label_width)
 
             # Paths to save the original and dithered images in the 'temp' directory with postfix
             original_image_path = os.path.join(
@@ -172,7 +172,7 @@ def render(preper_image, print_image, safe_filename):
             filename = safe_filename(os.path.basename(image_url))
             
             # Process the fetched image
-            grayscale_image, dithered_image = preper_image(image_to_process)
+            grayscale_image, dithered_image = preper_image(image_to_process, label_width=label_width)
             
             # Create checkboxes for rotation and dithering
             col1, col2 = st.columns(2)
