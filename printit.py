@@ -129,69 +129,6 @@ def safe_filename(text):
 label_dir = "labels"
 os.makedirs(label_dir, exist_ok=True)
 
-def generate_image(prompt, steps):
-    payload = {"prompt": prompt, "steps": steps, "width": label_width}
-
-    if TXT2IMG_URL == "http://localhost:7860":
-        st.warning("Using default Stable Diffusion URL (http://localhost:7860). Configure txt2img_url in .streamlit/secrets.toml for custom endpoint.")
-
-    try:
-        response = requests.post(url=f'{TXT2IMG_URL}/sdapi/v1/txt2img', json=payload)
-        response.raise_for_status()
-
-        print("Raw response content:", response.content)
-
-        r = response.json()
-
-        if r["images"]:
-            first_image = r["images"][0]
-            base64_data = first_image.split("base64,")[1] if "base64," in first_image else first_image
-            image = Image.open(io.BytesIO(base64.b64decode(base64_data)))
-
-            png_payload = {"image": "data:image/png;base64," + first_image}
-            response2 = requests.post(url=f"{TXT2IMG_URL}/sdapi/v1/png-info", json=png_payload)
-            response2.raise_for_status()
-
-            pnginfo = PngImagePlugin.PngInfo()
-            info = response2.json().get("info")
-            if info:
-                pnginfo.add_text("parameters", str(info))
-            current_date = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            temp_dir = "temp"
-            os.makedirs(temp_dir, exist_ok=True)
-            filename = os.path.join(temp_dir, "txt2img_" + current_date + ".png")
-            image.save(filename, pnginfo=pnginfo)
-
-            return image
-        else:
-            print("No images found in the response")
-            return None
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        return None
-
-def preper_image(image, label_width=label_width):
-    """Wrapper for image preparation - calls image_utils.preper_image"""
-    return prepare_image(image, label_width)
-
-
-def resize_image_to_width(image, target_width_mm):
-    """Wrapper for image resizing - calls image_utils.resize_image_to_width"""
-    return resize_image_to_width_util(image, target_width_mm, label_width)
-
-
-def img_concat_v(im1, im2, image_width=label_width):
-    """Wrapper for image concatenation - calls image_utils.img_concat_v"""
-    return img_concat_v_util(im1, im2, image_width)
-
-
-def print_image(image, rotate=0, dither=False):
-    """Wrapper for print_image - calls printer_utils.print_image"""
-    label_type, _ = get_label_type()
-    return print_image_util(image, rotate=rotate, dither=dither, label_type=label_type)
-
-
 def find_url(string):
     url_pattern = re.compile(r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+")
     urls = re.findall(url_pattern, string)
