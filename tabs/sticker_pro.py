@@ -191,7 +191,7 @@ def render(print_image, apply_threshold, add_border, apply_histogram_equalizatio
             
             # Apply target width resizing if specified
             if target_width_mm > 0:
-                image = resize_image_to_width(image, target_width_mm)
+                image = resize_image_to_width(image, target_width_mm, label_width)
             
             if mirror_checkbox:
                 image = ImageOps.mirror(image)

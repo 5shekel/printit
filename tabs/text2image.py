@@ -76,7 +76,7 @@ def render(submit_func, generate_image_func, preper_image, print_image, label_wi
 
     if st.session_state.generated_image:
         generated_image = st.session_state.generated_image
-        grayscale_image, dithered_image = preper_image(generated_image)
+        grayscale_image, dithered_image = preper_image(generated_image, label_width=label_width)
 
         col1, col2 = st.columns(2)
         with col1:
