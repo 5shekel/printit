@@ -21,6 +21,7 @@ def make_meme_text(image, top_text, bottom_text, font_size=20, outline_width=3):
     
     # Try common Impact font locations
     potential_paths = [
+        "fonts/Impact.ttf",
         "C:/Windows/Fonts/impact.ttf",
         "/System/Library/Fonts/Impact.ttf",
         "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
@@ -230,9 +231,9 @@ def render(print_image, apply_threshold, add_border, apply_histogram_equalizatio
             meme_top_text = ""
             meme_bottom_text = ""
             if meme_checkbox:
-                meme_font_size = st.slider("Meme Font Size", 10, 100, 20, key="sticker_pro_meme_font_size_final")
                 meme_top_text = st.text_input("Top Text", key="sticker_pro_meme_top")
                 meme_bottom_text = st.text_input("Bottom Text", key="sticker_pro_meme_bottom")
+                meme_font_size = st.slider("Meme Font Size", 10, 100, 20, key="sticker_pro_meme_font_size_final")
                 meme_outline_width = st.slider("Meme Outline Width", 1, 10, 3, key="sticker_pro_meme_outline_width")
 
             # Create a copy for display with border if needed
