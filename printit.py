@@ -165,6 +165,7 @@ for tab_obj, tab_name in zip(tab_objects, enabled_tab_names):
             if tab_name == "Sticker":
                 import tabs.sticker as sticker_module
                 sticker_module.render(
+                    label_width=label_width,
                     preper_image=preper_image,
                     print_image=print_image,
                     safe_filename=safe_filename,

@@ -140,7 +140,7 @@ def render(print_image, apply_threshold, add_border, apply_histogram_equalizatio
             dithered_image = None
             if print_choice == "Original":
                 dither = st.checkbox("Dither - approximate grey tones with dithering", value=True, key="sticker_pro_dither")
-                grayscale_image, dithered_image = preper_image(image)
+                grayscale_image, dithered_image = preper_image(image, label_width=label_width)
                 display_image = dithered_image if dither else grayscale_image
             else:  # Threshold
                 threshold_percent = st.slider("Threshold (%)", 0, 100, 50, key="sticker_pro_threshold")
