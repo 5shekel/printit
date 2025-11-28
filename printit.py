@@ -6,20 +6,10 @@ import glob
 import base64
 import os
 import re
-import tempfile
 from datetime import datetime
 import time
 import hashlib
-import qrcode
-from brother_ql.models import ModelsManager
-from brother_ql.backends import backend_factory
-from brother_ql.raster import BrotherQLRaster
-from brother_ql.conversion import convert
-from brother_ql.backends.helpers import send
 from brother_ql import labels
-import usb.core
-import subprocess
-from job_queue import print_queue
 
 # Import image utilities
 from image_utils import (
