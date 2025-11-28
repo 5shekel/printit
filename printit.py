@@ -1,55 +1,35 @@
 import streamlit as st
-from PIL import Image, ImageDraw, ImageFont, PngImagePlugin, ImageOps
-import requests
-import io
 import glob
-import base64
 import os
 import re
-from datetime import datetime
 import time
 import hashlib
 from brother_ql import labels
 
+
+# Tabs get imported only when enabled in config.toml
+
+
 # Import image utilities
 from image_utils import (
-    preper_image as prepare_image,
+    preper_image,
     apply_threshold,
-    resize_image_to_width as resize_image_to_width_util,
+    resize_image_to_width,
     add_border,
     apply_histogram_equalization,
-    img_concat_v as img_concat_v_util,
+    img_concat_v,
 )
-
-# Import printer utilities
 from printer_utils import (
-    find_and_parse_printer,
-    get_printer_label_info,
-    get_label_width as get_label_width_util,
-    print_image as print_image_util,
+    print_image,
     get_label_type,
 )
 
 # Import configuration
 from config import (
     get_enabled_tabs,
-    LABEL_TYPE,
     APP_TITLE,
     HISTORY_LIMIT,
-    ITEMS_PER_PAGE,
-    QUEUE_VIEW,
-    TXT2IMG_URL,
 )
-
-# Import tab modules
-import tabs.sticker as sticker_module
-import tabs.label as label_module
-import tabs.text2image as text2image_module
-import tabs.webcam as webcam_module
-import tabs.cat as cat_module
-import tabs.sticker_pro as sticker_pro_module
-import tabs.history as history_module
-import tabs.faq as faq_module
 
 # Get label type and width
 label_type, label_status = get_label_type()
@@ -250,12 +230,14 @@ for tab_obj, tab_name in zip(tab_objects, enabled_tab_names):
     with tab_obj:
         try:
             if tab_name == "Sticker":
+                import tabs.sticker as sticker_module
                 sticker_module.render(
                     preper_image=preper_image,
                     print_image=print_image,
                     safe_filename=safe_filename,
                 )
             elif tab_name == "Label":
+                import tabs.label as label_module
                 label_module.render(
                     label_type=label_type,
                     label_width=label_width,
@@ -268,6 +250,7 @@ for tab_obj, tab_name in zip(tab_objects, enabled_tab_names):
                     img_concat_v=img_concat_v,
                 )
             elif tab_name == "Text2image":
+                import tabs.text2image as text2image_module
                 # For text2image, we need to define submit function
                 def submit():
                     st.session_state.prompt = st.session_state.widget
@@ -281,11 +264,13 @@ for tab_obj, tab_name in zip(tab_objects, enabled_tab_names):
                 
                 text2image_module.render(
                     submit_func=submit,
-                    generate_image=generate_image,
+                    generate_image_func=text2image_module.generate_image,
                     preper_image=preper_image,
                     print_image=print_image,
+                    label_width=label_width,
                 )
             elif tab_name == "Webcam":
+                import tabs.webcam as webcam_module
                 webcam_module.render(
                     preper_image=preper_image,
                     print_image=print_image,
@@ -293,13 +278,16 @@ for tab_obj, tab_name in zip(tab_objects, enabled_tab_names):
                     label_dir=label_dir,
                 )
             elif tab_name == "Cat":
+                import tabs.cat as cat_module
                 cat_module.render(
                     preper_image=preper_image,
                     print_image=print_image,
                 )
             elif tab_name == "FAQ":
+                import tabs.faq as faq_module
                 faq_module.render()
             elif tab_name == "Sticker Pro":
+                import tabs.sticker_pro as sticker_pro_module    
                 sticker_pro_module.render(
                     print_image=print_image,
                     apply_threshold=apply_threshold,
@@ -310,6 +298,7 @@ for tab_obj, tab_name in zip(tab_objects, enabled_tab_names):
                     label_width=label_width,
                 )
             elif tab_name == "History":
+                import tabs.history as history_module
                 history_module.render(
                     list_saved_images=list_saved_images,
                     label_dir=label_dir,
