@@ -27,6 +27,7 @@ from printer_utils import (
     get_printer_label_info,
     get_label_width as get_label_width_util,
     print_image as print_image_util,
+    get_label_type,
 )
 
 # Import configuration
@@ -50,42 +51,6 @@ import tabs.sticker_pro as sticker_pro_module
 import tabs.history as history_module
 import tabs.faq as faq_module
 
-# Session state initialization
-if 'label_type' not in st.session_state:
-    st.session_state.label_type = None
-    st.session_state.label_status = None
-
-# ============================================================================
-# PRINTER DETECTION AND CONFIGURATION
-# ============================================================================
-
-def get_label_type():
-    """Get label type from printer, config, or default."""
-    if st.session_state.label_type is not None:
-        return st.session_state.label_type, st.session_state.label_status
-
-    detected_label, status_message = get_printer_label_info()
-    if detected_label:
-        print(f"Using detected label type: {detected_label} - {status_message}")
-        st.session_state.label_type = detected_label
-        st.session_state.label_status = status_message
-        return detected_label, status_message
-
-    if LABEL_TYPE:
-        status = "Using configured label_type from config.toml"
-        print(f"Using configured label type from config.toml: {LABEL_TYPE}")
-        st.session_state.label_type = LABEL_TYPE
-        st.session_state.label_status = status
-        return LABEL_TYPE, status
-
-    default_type = "62"
-    status = "Using default label type 62"
-    print("No label type detected or configured, using default 62")
-    st.warning("⚠️ No label type detected from printer and none configured in config.toml. Using default label type 62")
-    st.session_state.label_type = default_type
-    st.session_state.label_status = status
-    return default_type, status
-
 # Get label type and width
 label_type, label_status = get_label_type()
 label_width = labels.ALL_LABELS[0].dots_printable[0]
@@ -96,7 +61,7 @@ for label in labels.ALL_LABELS:
         break
 
 # ============================================================================
-# UTILITY FUNCTIONS
+# PRINTER DETECTION AND CONFIGURATION
 # ============================================================================
 
 def list_saved_images(filter_duplicates=True):

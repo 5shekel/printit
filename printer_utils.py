@@ -13,6 +13,7 @@ import usb.core
 
 import streamlit as st
 from job_queue import print_queue
+from config import LABEL_TYPE
 
 def find_and_parse_printer():
     """Find and parse Brother QL printer information."""
@@ -256,3 +257,35 @@ def process_print_job(image, printer_info, temp_file_path, rotate=0, dither=Fals
         if debug:
             print(error_msg)
         return False, error_msg
+
+
+def get_label_type():
+    """Get label type from printer, config, or default."""
+    if 'label_type' not in st.session_state:
+        st.session_state.label_type = None
+        st.session_state.label_status = None
+    
+    if st.session_state.label_type is not None:
+        return st.session_state.label_type, st.session_state.label_status
+
+    detected_label, status_message = get_printer_label_info()
+    if detected_label:
+        print(f"Using detected label type: {detected_label} - {status_message}")
+        st.session_state.label_type = detected_label
+        st.session_state.label_status = status_message
+        return detected_label, status_message
+
+    if LABEL_TYPE:
+        status = "Using configured label_type from config.toml"
+        print(f"Using configured label type from config.toml: {LABEL_TYPE}")
+        st.session_state.label_type = LABEL_TYPE
+        st.session_state.label_status = status
+        return LABEL_TYPE, status
+
+    default_type = "62"
+    status = "Using default label type 62"
+    print("No label type detected or configured, using default 62")
+    st.warning("⚠️ No label type detected from printer and none configured in config.toml. Using default label type 62")
+    st.session_state.label_type = default_type
+    st.session_state.label_status = status
+    return default_type, status
