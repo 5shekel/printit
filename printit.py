@@ -214,6 +214,7 @@ for tab_obj, tab_name in zip(tab_objects, enabled_tab_names):
             elif tab_name == "Cat":
                 import tabs.cat as cat_module
                 cat_module.render(
+                    label_width=label_width,
                     preper_image=preper_image,
                     print_image=print_image,
                 )

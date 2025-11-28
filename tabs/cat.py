@@ -6,7 +6,7 @@ from io import BytesIO
 from PIL import Image
 
 
-def render(preper_image, print_image):
+def render(preper_image, print_image,label_width):
     """Render the Cat tab."""
     st.subheader(":printer: a cat")
     st.caption("from the fine folks at https://thecatapi.com/")
@@ -35,7 +35,7 @@ def render(preper_image, print_image):
 
                 # Download and process image
                 img = Image.open(BytesIO(requests.get(image_url).content)).convert('RGB')
-                grayscale_image, dithered_image = preper_image(img)
+                grayscale_image, dithered_image = preper_image(img, label_width=label_width)
                 
                 # Store in session state
                 st.session_state.cat_image = grayscale_image
