@@ -22,17 +22,16 @@ network access by the openziti/zrok projects
 
 ![print station](./assets/station_sm.jpg)
 ### usage
-install [uv](https://docs.astral.sh/uv/getting-started/installation/) to handle requirements and running. 
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/):
 
 ```bash
+uv sync
 uv run streamlit run printit.py --server.port 8989
 ```
 
-or old school python
+Or with pip:
 
 ```bash
-python -m venv venv
-source venv/bin/activate
 pip install -r requirements.txt
 streamlit run printit.py --server.port 8989
 ```
