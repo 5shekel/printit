@@ -1,5 +1,4 @@
 
-
 ## printit
 this was a fun experimante in the 2023 ccc camp, people printed a lot of stickers.
 
@@ -93,3 +92,45 @@ to get the brother_ql lib to detect the printer, you need to install a usb filte
  - install the filter 'lib-winUSB` ,replacing the ql-XXXX driver
  - replug the printer
 
+
+### update streamlit
+
+streamlit had made some update with handling widths, `pip install --upgrade streamlit` if you see something in the line of 
+
+```
+Exception in tab Label: '<=' not supported between instances of 'str' and 'int'
+Traceback (most recent call last):
+  File "/home/pi/stikka-factory/printit.py", line 304, in <module>
+    label_module.render(
+  File "/home/pi/stikka-factory/tabs/label.py", line 256, in render
+    st.image(img, width='stretch')
+  File "/home/pi/printit/venv/lib/python3.11/site-packages/streamlit/runtime/metrics_util.py", line 410, in wrapped_func
+    result = non_optional_func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pi/printit/venv/lib/python3.11/site-packages/streamlit/elements/image.py", line 154, in image
+    WidthBehavior.ORIGINAL if (width is None or width <= 0) else width
+``` 
+
+## Refactoring Summary
+
+### Configuration Management
+- Created `config.toml` in workspace root for all application settings (non-sensitive)
+- Moved settings from `secrets.toml` to `config.toml`: title, label_type, history_limit, items_per_page, queue_view, txt2img_url
+- `secrets.toml` now contains only API keys (cat_api_key)
+- Created `config.py` module to load and expose configuration constants
+
+### Code Organization
+- Extracted image processing utilities into `image_utils.py`
+- Extracted printer handling utilities into `printer_utils.py`
+- Updated `printit.py` to import from utility modules instead of defining functions locally
+
+### UI/UX Improvements
+- Updated all `st.image()` calls to use `use_container_width=True` for consistent responsive behavior, **updating streamlit is maybe needed**.
+
+### Key Files Modified
+- `config.py` - Application configuration loader
+- `config.toml` - Settings file
+- `image_utils.py` - Image processing functions
+- `printer_utils.py` - Printer handling functions
+- `printit.py` - Main app (refactored)
+- `tabs/*.py` - Tab modules (updated imports)

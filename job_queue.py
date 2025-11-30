@@ -108,7 +108,7 @@ class PrintQueue:
 
                 try:
                     # Import here to make it mockable in tests
-                    from device_handler import process_print_job
+                    from printer_utils import process_print_job
                     
                     # Process the print job using our printer handler
                     success, error = process_print_job(
