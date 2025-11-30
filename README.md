@@ -16,17 +16,24 @@ started as a fork of [brother_ql_web](https://github.com/pklaus/brother_ql_web) 
 
 network access by the openziti/zrok projects
 ### TBD
- * better text/label handeling
    * wrap text for printing paragraphs
-   * rotate labels to print bigger stuff
  * ???
  * profit
 
 
 ![print station](./assets/station_sm.jpg)
 ### usage
-added `streamlit`` to requirements.txt
+install [uv](https://docs.astral.sh/uv/getting-started/installation/) to handle requirements and running. 
+
 ```bash
+uv run streamlit run printit.py --server.port 8989
+```
+
+or old school python
+
+```bash
+python -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 streamlit run printit.py --server.port 8989
 ```
@@ -49,7 +56,7 @@ Description=sticker factory
 After=network.target
 
 [Service]
-ExecStart=/bin/bash -c 'source /home/<user>/printit/venv/bin/activate && streamlit run printit.py --server.port 8989'
+ExecStart=/bin/bash -c 'source /home/<user>/printit/venv/bin/activate &&  /usr/bin/uv run streamlit run printit.py --server.port 8989'
 WorkingDirectory=/home/<user>/printit
 Environment="PATH=/home/devdesk/<user>/printit/venv/bin/python"
 Restart=always
