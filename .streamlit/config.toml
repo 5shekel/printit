@@ -78,10 +78,10 @@ gatherUsageStats = false
 
 # The preset Streamlit theme that your custom theme inherits from.
 # One of "light" or "dark".
-# base =
+base = "dark"
 
 # Primary accent color for interactive elements.
-# primaryColor =
+primaryColor = "#9673ff"
 
 # Background color for the main content area.
 # backgroundColor =
@@ -90,7 +90,8 @@ gatherUsageStats = false
 # secondaryBackgroundColor =
 
 # Color used for almost all text.
-# textColor =
+# textColor = "#faf5f5"
+
 
 # Font family for all text in the app, except code blocks. One of "sans serif",
 # "serif", or "monospace".
