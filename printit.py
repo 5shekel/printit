@@ -147,7 +147,7 @@ if not os.path.exists(".streamlit/secrets.toml"):
     See the example file for all available options and their descriptions.
     """)
 
-st.title(APP_TITLE)
+st.title(f":rainbow[**{APP_TITLE}**]")
 st.subheader(":printer: hard copies of images and text")
 
 # printer selection
