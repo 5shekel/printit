@@ -15,6 +15,30 @@ import streamlit as st
 from job_queue import print_queue
 from config import LABEL_TYPE
 
+
+@dataclass
+class PrinterInfo:
+    identifier: str
+    backend: str
+    protocol: str
+    vendor_id: str
+    product_id: str
+    serial_number: str
+    name: str = "Brother QL Printer"
+    model: str = "QL-570"
+    status: str = "unknown"
+    label_type: str = "unknown"
+    label_size : str = "unknown"
+    label_width: int = 0
+    label_height: int = 0
+    
+    def __getitem__(self, item):
+        return getattr(self, item)
+    
+    def __setitem__(self, key, value):
+        setattr(self, key, value)
+
+
 def find_and_parse_printer():
     """Find and parse Brother QL printer information."""
     model_manager = ModelsManager()
