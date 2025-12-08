@@ -3,7 +3,7 @@
 # This tab requires many helper functions from the main file
 # Import and use from printit.py context
 
-def render(label_type, label_width, get_fonts, find_url, preper_image, print_image, safe_filename, label_dir, img_concat_v):
+def render(printer_info, get_fonts, find_url, preper_image, print_image, safe_filename, label_dir, img_concat_v):
     """Render the Label tab - implementation from main printit.py."""
     import streamlit as st
     import os
@@ -12,6 +12,8 @@ def render(label_type, label_width, get_fonts, find_url, preper_image, print_ima
     
     st.subheader(":printer: a label")
 
+    label_type = printer_info["label_type"]
+    label_width = printer_info["label_width"]
     # Helper functions
     def calculate_actual_image_height_with_empty_lines(text, font, line_spacing=10):
         draw = ImageDraw.Draw(Image.new("RGB", (1, 1), color="white"))
@@ -255,7 +257,7 @@ def render(label_type, label_width, get_fonts, find_url, preper_image, print_ima
         if text and not (qrurl):
             st.image(img, width='stretch')
             if st.button("Print sticker", key="print_text_only"):
-                print_image(img)
+                print_image(img,printer_info=printer_info)
                 st.success("sticker sent to printer")
         
         st.markdown("""
