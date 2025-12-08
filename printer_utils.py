@@ -40,10 +40,10 @@ class PrinterInfo:
 
 
 def find_and_parse_printer():
-    """Find and parse Brother QL printer information."""
+    print("Searching for Brother QL printers...")
     model_manager = ModelsManager()
     
-    print("Searching for Brother QL printer...")
+    found_printers = []
 
     for backend_name in ["pyusb", "linux_kernel"]:
         try:
@@ -70,8 +70,6 @@ def find_and_parse_printer():
                 except ValueError:
                     print(f"Invalid device info format: {device_info}")
                     continue
-
-                model = "QL-570"
                 
                 try:
                     product_id_int = int(product_id, 16)
@@ -84,24 +82,59 @@ def find_and_parse_printer():
                     print(f"Invalid product ID format: {product_id}")
                     continue
 
-                printer_info = {
-                    "identifier": identifier,
-                    "backend": backend_name,
-                    "model": model,
-                    "protocol": protocol,
-                    "vendor_id": vendor_id,
-                    "product_id": product_id,
-                    "serial_number": serial_number,
-                }
-                print(f"Found printer: {printer_info}")
-                return printer_info
-                
+                printer_info = PrinterInfo(
+                    identifier=identifier,
+                    backend=backend_name,
+                    model=model,
+                    protocol=protocol,
+                    vendor_id=vendor_id,
+                    product_id=product_id,
+                    serial_number=serial_number,
+                )
+                found_printers.append(printer_info)            
+                get_printer_status(printer_info)
+                printer_info['name'] = f"{printer_info['model']} - H{serial_number.split('H')[-1]} - {printer_info['label_size']}"
+                print(f"Added printer: {printer_info}")
+
         except Exception as e:
             print(f"Error with backend {backend_name}: {str(e)}")
-            continue
+            continue    
+    return found_printers
 
-    print("No Brother QL printer found")
-    return None
+
+def get_printer_status(printer):
+    try:
+        cmd = f"brother_ql -b pyusb --model {printer['model']} -p {printer['identifier']} status"
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        for line in result.stdout.splitlines():
+            if "Phase:" in line:
+                printer['status'] = line.split("Phase:")[1].strip()
+                print(f"Printer {printer['identifier']} status: {printer['status']}")
+            if "Media size:" in line:
+                printer['label_size'] = line.split("Media size:")[1].strip()
+                size_str = line.split("Media size:")[1].strip().split('x')[0].strip()
+                try:
+                    media_width_mm = int(size_str)
+                    label_sizes = {
+                        12: "12", 29: "29", 38: "38", 50: "50", 54: "54", 
+                        62: "62", 102: "102", 103: "103", 104: "104"
+                    }
+                    if media_width_mm in label_sizes:
+                        label_type = label_sizes[media_width_mm]
+                        printer['label_type'] = label_type
+                        printer['label_width'] = get_label_width(label_type)
+                        printer['label_height'] = None
+                        print(f"Printer {printer['identifier']} label type: {label_type}")
+                except ValueError:
+                    continue
+
+    except Exception as e:
+        #print(f"Error getting status for printer {printer['identifier']}: {str(e)}")
+        printer['status'] = str(e)
+        printer['label_type'] = "unknown"
+        printer['label_size'] = "unknown"
+        printer['label_width'] = 0
+        printer['label_height'] = 0
 
 
 def get_printer_label_info():
