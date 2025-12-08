@@ -20,8 +20,9 @@ from image_utils import (
     img_concat_v,
 )
 from printer_utils import (
+    find_and_parse_printer,
     print_image,
-    get_label_type,
+    # get_label_type
 )
 
 # Import configuration
@@ -31,14 +32,15 @@ from config import (
     HISTORY_LIMIT,
 )
 
-# Get label type and width
-label_type, label_status = get_label_type()
-label_width = labels.ALL_LABELS[0].dots_printable[0]
-for label in labels.ALL_LABELS:
-    if label.identifier == label_type:
-        label_width = label.dots_printable[0]
-        print(f"Label type {label_type} width: {label_width} dots")
-        break
+# # Get label type and width
+# #label_type, label_status = get_label_type()
+# label_type = st.secrets.get("printer", {}).get("label_type", None)
+# label_width = labels.ALL_LABELS[0].dots_printable[0]
+# for label in labels.ALL_LABELS:
+#     if label.identifier == label_type:
+#         label_width = label.dots_printable[0]
+#         print(f"Label type {label_type} width: {label_width} dots")
+#         break
 
 def list_saved_images(filter_duplicates=True):
     temp_files = glob.glob(os.path.join("temp", "*.[pj][np][g]*"))
@@ -148,6 +150,32 @@ if not os.path.exists(".streamlit/secrets.toml"):
 st.title(APP_TITLE)
 st.subheader(":printer: hard copies of images and text")
 
+# printer selection
+printers = find_and_parse_printer()
+print("Detected printers:", printers)
+printer_names = [p["model"] for p in printers]
+printer = st.sidebar.radio("**Select Printer**", printer_names)
+
+selected_printer = next((p for p in printers if p["model"] == printer), None)
+if selected_printer:
+    st.sidebar.markdown(f"**Printer Model:** {selected_printer['model']}")
+    st.sidebar.markdown(f"**Serial Number:** {selected_printer['serial_number']}")
+    st.sidebar.markdown(f"**Label Size:** {selected_printer['label_size']}")
+    st.sidebar.markdown(f"**Status:** {selected_printer['status']}")
+    label_type = selected_printer['label_type']
+    label_width = selected_printer['label_width']
+else:
+    st.sidebar.error("❌ Selected printer not found!")
+    label_type = st.secrets.get("printer", {}).get("label_type", None)
+    label_width = labels.ALL_LABELS[0].dots_printable[0]
+    for label in labels.ALL_LABELS:
+        if label.identifier == label_type:
+            label_width = label.dots_printable[0]
+            print(f"Label type {label_type} width: {label_width} dots")
+            break
+
+
+
 # Get enabled tabs from configuration
 enabled_tab_names = get_enabled_tabs()
 
@@ -173,8 +201,7 @@ for tab_obj, tab_name in zip(tab_objects, enabled_tab_names):
             elif tab_name == "Label":
                 import tabs.label as label_module
                 label_module.render(
-                    label_type=label_type,
-                    label_width=label_width,
+                    printer_info=selected_printer,
                     get_fonts=get_fonts,
                     find_url=find_url,
                     preper_image=preper_image,
