@@ -10,11 +10,10 @@ from brother_ql.raster import BrotherQLRaster
 from brother_ql.conversion import convert
 from brother_ql.backends.helpers import send
 import usb.core
+from dataclasses import dataclass
 
 import streamlit as st
 from job_queue import print_queue
-from config import LABEL_TYPE
-
 
 @dataclass
 class PrinterInfo:
@@ -137,58 +136,6 @@ def get_printer_status(printer):
         printer['label_height'] = 0
 
 
-def get_printer_label_info():
-    """Get label information from printer or use defaults."""
-    printer_info = find_and_parse_printer()
-    if not printer_info:
-        return None, "No printer found"
-    
-    try:
-        cmd = f"brother_ql -b pyusb --model {printer_info['model']} -p {printer_info['identifier']} status"
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-        
-        if result.returncode == 0 and result.stdout:
-            status_output = result.stdout
-            print(f"Printer status output: {status_output}")
-            
-            media_width_mm = None
-            
-            for line in status_output.split('\n'):
-                if 'Media size:' in line:
-                    try:
-                        width_str = line.split(':')[1].split('x')[0].strip()
-                        media_width_mm = int(width_str)
-                        print(f"Detected media width: {media_width_mm}mm")
-                    except ValueError:
-                        continue
-            
-            if media_width_mm is not None:
-                label_sizes = {
-                    12: "12", 29: "29", 38: "38", 50: "50", 54: "54", 
-                    62: "62", 102: "102", 103: "103", 104: "104"
-                }
-                
-                if media_width_mm in label_sizes:
-                    label_type = label_sizes[media_width_mm]
-                    return label_type, f"Detected {label_type} ({media_width_mm}mm)"
-        
-        if 'model' in printer_info:
-            model_defaults = {
-                'QL-500': "62", 'QL-550': "62", 'QL-560': "62", 'QL-570': "62",
-                'QL-580N': "62", 'QL-650TD': "62", 'QL-700': "62", 'QL-710W': "62",
-                'QL-720NW': "62", 'QL-800': "62", 'QL-810W': "62", 'QL-820NWB': "62",
-                'QL-1050': "102", 'QL-1060N': "102",
-            }
-            if printer_info['model'] in model_defaults:
-                return model_defaults[printer_info['model']], f"Using default for {printer_info['model']}"
-        
-        return "62", "Using safe default width"
-        
-    except Exception as e:
-        print(f"Error getting printer status: {str(e)}")
-        return "62", f"Error getting printer status, using default"
-
-
 def get_label_width(label_type):
     """Get the pixel width of a label type."""
     label_definitions = labels.ALL_LABELS
@@ -200,7 +147,7 @@ def get_label_width(label_type):
     raise ValueError(f"Label type {label_type} not found in label definitions")
 
 
-def print_image(image, rotate=0, dither=False, label_type="62"):
+def print_image(image, printer_info, rotate=0, dither=False, label_type="62"):
     """Queue a print job."""
     temp_dir = tempfile.gettempdir()
     import os
@@ -210,11 +157,6 @@ def print_image(image, rotate=0, dither=False, label_type="62"):
         temp_file_path = temp_file.name
         image.save(temp_file_path, "PNG")
         print(f"Image saved to: {temp_file_path}")
-
-    printer_info = find_and_parse_printer()
-    if not printer_info:
-        st.error("No Brother QL printer found. Please check the connection and try again.")
-        return False
 
     print(f"Using label type: {label_type}")
 
@@ -314,35 +256,3 @@ def process_print_job(image, printer_info, temp_file_path, rotate=0, dither=Fals
         if debug:
             print(error_msg)
         return False, error_msg
-
-
-def get_label_type():
-    """Get label type from printer, config, or default."""
-    if 'label_type' not in st.session_state:
-        st.session_state.label_type = None
-        st.session_state.label_status = None
-    
-    if st.session_state.label_type is not None:
-        return st.session_state.label_type, st.session_state.label_status
-
-    detected_label, status_message = get_printer_label_info()
-    if detected_label:
-        print(f"Using detected label type: {detected_label} - {status_message}")
-        st.session_state.label_type = detected_label
-        st.session_state.label_status = status_message
-        return detected_label, status_message
-
-    if LABEL_TYPE:
-        status = "Using configured label_type from config.toml"
-        print(f"Using configured label type from config.toml: {LABEL_TYPE}")
-        st.session_state.label_type = LABEL_TYPE
-        st.session_state.label_status = status
-        return LABEL_TYPE, status
-
-    default_type = "62"
-    status = "Using default label type 62"
-    print("No label type detected or configured, using default 62")
-    st.warning("⚠️ No label type detected from printer and none configured in config.toml. Using default label type 62")
-    st.session_state.label_type = default_type
-    st.session_state.label_status = status
-    return default_type, status
