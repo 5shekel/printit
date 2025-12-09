@@ -230,6 +230,13 @@ else:
                         preper_image=preper_image,
                         print_image=print_image,
                     )
+                elif tab_name == "Dog":
+                    import tabs.dog as dog_module
+                    dog_module.render(
+                        printer_info=selected_printer,
+                        preper_image=preper_image,
+                        print_image=print_image,
+                    )
                 elif tab_name == "FAQ":
                     import tabs.faq as faq_module
                     faq_module.render()

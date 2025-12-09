@@ -138,3 +138,5 @@ fonts/PixelifySans-VariableFont_wght.ttf
 fonts/Smasher 312 Custom.ttf
 fonts/Vandalust.ttf
 fonts/Xandercode.ttf
+job_queue_old.py
+printer_utils_old.py
