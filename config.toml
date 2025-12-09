@@ -25,6 +25,7 @@ enabled = [
     "Text2image",
     "Webcam",
     "Cat",
+    "Dog",
     "History",
     "FAQ",
 ]

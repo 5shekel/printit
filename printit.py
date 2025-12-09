@@ -158,93 +158,118 @@ if not enabled_tab_names:
 # Create tabs dynamically
 tab_objects = st.tabs(enabled_tab_names)
 
-# Render each enabled tab
-for tab_obj, tab_name in zip(tab_objects, enabled_tab_names):
-    with tab_obj:
-        try:
-            if tab_name == "Sticker":
-                import tabs.sticker as sticker_module
-                sticker_module.render(
-                    label_width=label_width,
-                    preper_image=preper_image,
-                    print_image=print_image,
-                    safe_filename=safe_filename,
-                )
-            elif tab_name == "Label":
-                import tabs.label as label_module
-                label_module.render(
-                    label_type=label_type,
-                    label_width=label_width,
-                    get_fonts=get_fonts,
-                    find_url=find_url,
-                    preper_image=preper_image,
-                    print_image=print_image,
-                    safe_filename=safe_filename,
-                    label_dir=label_dir,
-                    img_concat_v=img_concat_v,
-                )
-            elif tab_name == "Text2image":
-                import tabs.text2image as text2image_module
-                # For text2image, we need to define submit function
-                def submit():
-                    st.session_state.prompt = st.session_state.widget
-                    st.session_state.widget = ""
-                    st.session_state.generated_image = None
-                
-                if "prompt" not in st.session_state:
-                    st.session_state.prompt = ""
-                if "generated_image" not in st.session_state:
-                    st.session_state.generated_image = None
-                
-                text2image_module.render(
-                    submit_func=submit,
-                    generate_image_func=text2image_module.generate_image,
-                    preper_image=preper_image,
-                    print_image=print_image,
-                    label_width=label_width,
-                )
-            elif tab_name == "Webcam":
-                import tabs.webcam as webcam_module
-                webcam_module.render(
-                    preper_image=preper_image,
-                    print_image=print_image,
-                    safe_filename=safe_filename,
-                    label_dir=label_dir,
-                )
-            elif tab_name == "Cat":
-                import tabs.cat as cat_module
-                cat_module.render(
-                    label_width=label_width,
-                    preper_image=preper_image,
-                    print_image=print_image,
-                )
-            elif tab_name == "FAQ":
-                import tabs.faq as faq_module
-                faq_module.render()
-            elif tab_name == "Sticker Pro":
-                import tabs.sticker_pro as sticker_pro_module    
-                sticker_pro_module.render(
-                    print_image=print_image,
-                    apply_threshold=apply_threshold,
-                    add_border=add_border,
-                    apply_histogram_equalization=apply_histogram_equalization,
-                    resize_image_to_width=resize_image_to_width,
-                    preper_image=preper_image,
-                    label_width=label_width,
-                )
-            elif tab_name == "History":
-                import tabs.history as history_module
-                history_module.render(
-                    list_saved_images=list_saved_images,
-                    label_dir=label_dir,
-                    safe_filename=safe_filename,
-                    print_image=print_image,
-                    preper_image=preper_image,
-                )
-            else:
-                st.warning(f"Tab '{tab_name}' is not implemented yet")
-        except Exception as e:
-            st.error(f"Error rendering {tab_name} tab: {str(e)}")
-            print(f"Exception in tab {tab_name}: {e}")
-            import traceback
-            traceback.print_exc()
+else:
+    st.sidebar.markdown(f"**Printer Model:** {selected_printer['model']}")
+    st.sidebar.markdown(f"**Serial Number:** {selected_printer['serial_number']}")
+    st.sidebar.markdown(f"**Label Size:** {selected_printer['label_size']}")
+    st.sidebar.markdown(f"**Status:** {selected_printer['status']}")
+    label_type = selected_printer['label_type']
+    label_width = selected_printer['label_width']
+
+    # Get enabled tabs from configuration
+    enabled_tab_names = get_enabled_tabs()
+
+    if not enabled_tab_names:
+        st.error("❌ No tabs are enabled! Check tabs/__init__.py ENABLED_TABS configuration")
+        st.stop()
+
+    # Create tabs dynamically
+    tab_objects = st.tabs(enabled_tab_names)
+
+    # Render each enabled tab
+    for tab_obj, tab_name in zip(tab_objects, enabled_tab_names):
+        with tab_obj:
+            try:
+                if tab_name == "Sticker":
+                    import tabs.sticker as sticker_module
+                    sticker_module.render(
+                        printer_info=selected_printer,
+                        preper_image=preper_image,
+                        print_image=print_image,
+                        safe_filename=safe_filename,
+                    )
+                elif tab_name == "Label":
+                    import tabs.label as label_module
+                    label_module.render(
+                        printer_info=selected_printer,
+                        get_fonts=get_fonts,
+                        find_url=find_url,
+                        preper_image=preper_image,
+                        print_image=print_image,
+                        safe_filename=safe_filename,
+                        label_dir=label_dir,
+                        img_concat_v=img_concat_v,
+                    )
+                elif tab_name == "Text2image":
+                    import tabs.text2image as text2image_module
+                    # For text2image, we need to define submit function
+                    def submit():
+                        st.session_state.prompt = st.session_state.widget
+                        st.session_state.widget = ""
+                        st.session_state.generated_image = None
+                    
+                    if "prompt" not in st.session_state:
+                        st.session_state.prompt = ""
+                    if "generated_image" not in st.session_state:
+                        st.session_state.generated_image = None
+                    
+                    text2image_module.render(
+                        submit_func=submit,
+                        generate_image_func=text2image_module.generate_image,
+                        preper_image=preper_image,
+                        print_image=print_image,
+                        printer_info=selected_printer,
+                    )
+                elif tab_name == "Webcam":
+                    import tabs.webcam as webcam_module
+                    webcam_module.render(
+                        printer_info=selected_printer,
+                        preper_image=preper_image,
+                        print_image=print_image,
+                        safe_filename=safe_filename,
+                        label_dir=label_dir,
+                    )
+                elif tab_name == "Cat":
+                    import tabs.cat as cat_module
+                    cat_module.render(
+                        printer_info=selected_printer,
+                        preper_image=preper_image,
+                        print_image=print_image,
+                    )
+                elif tab_name == "Dog":
+                    import tabs.dog as dog_module
+                    dog_module.render(
+                        printer_info=selected_printer,
+                        preper_image=preper_image,
+                        print_image=print_image,
+                    )
+                elif tab_name == "FAQ":
+                    import tabs.faq as faq_module
+                    faq_module.render()
+                elif tab_name == "Sticker Pro":
+                    import tabs.sticker_pro as sticker_pro_module    
+                    sticker_pro_module.render(
+                        print_image=print_image,
+                        apply_threshold=apply_threshold,
+                        add_border=add_border,
+                        apply_histogram_equalization=apply_histogram_equalization,
+                        resize_image_to_width=resize_image_to_width,
+                        preper_image=preper_image,
+                        printer_info=selected_printer,
+                    )
+                elif tab_name == "History":
+                    import tabs.history as history_module
+                    history_module.render(
+                        list_saved_images=list_saved_images,
+                        label_dir=label_dir,
+                        safe_filename=safe_filename,
+                        print_image=print_image,
+                        preper_image=preper_image,
+                    )
+                else:
+                    st.warning(f"Tab '{tab_name}' is not implemented yet")
+            except Exception as e:
+                st.error(f"Error rendering {tab_name} tab: {str(e)}")
+                print(f"Exception in tab {tab_name}: {e}")
+                import traceback
+                traceback.print_exc()
