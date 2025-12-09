@@ -61,7 +61,7 @@ def submit(st_session_state):
     st_session_state.generated_image = None
 
 
-def render(submit_func, generate_image_func, preper_image, print_image, label_width):
+def render(submit_func, generate_image_func, preper_image, print_image, printer_info):
     """Render the Text2image tab."""
     st.subheader(":printer: image from text")
     st.write("using tami stable diffusion bot")
@@ -71,12 +71,12 @@ def render(submit_func, generate_image_func, preper_image, print_image, label_wi
 
     if prompt and st.session_state.generated_image is None:
         st.write("Generating image from prompt: " + prompt)
-        generated_image = generate_image_func(prompt, 30, label_width)
+        generated_image = generate_image_func(prompt, 30, printer_info['label_width'])
         st.session_state.generated_image = generated_image
 
     if st.session_state.generated_image:
         generated_image = st.session_state.generated_image
-        grayscale_image, dithered_image = preper_image(generated_image, label_width=label_width)
+        grayscale_image, dithered_image = preper_image(generated_image, label_width=printer_info['label_width'])
 
         col1, col2 = st.columns(2)
         with col1:
