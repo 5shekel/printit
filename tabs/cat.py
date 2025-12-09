@@ -17,12 +17,12 @@ def render(preper_image,printer_info, print_image):
         st.session_state.cat_dithered = None
     
     # Check if Cat API key exists and is valid
-    cat_api_key = st.secrets.get("cat_api_key", "")
+    # cat_api_key = st.secrets.get("cat_api_key", "")
     
-    if not cat_api_key or cat_api_key == "ask me":
-        st.warning("⚠️ Cat API key is not configured")
-        st.info("Add your cat_api_key to .streamlit/secrets.toml")
-    else:
+    # if not cat_api_key or cat_api_key == "ask me":
+    #     st.warning("⚠️ Cat API key is not configured")
+    #     st.info("Add your cat_api_key to .streamlit/secrets.toml")
+    if True:
         if st.button("Fetch cat"):
             try:
                 # Get cat image URL
