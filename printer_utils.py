@@ -147,7 +147,7 @@ def get_label_width(label_type):
     raise ValueError(f"Label type {label_type} not found in label definitions")
 
 
-def print_image(image, printer_info, rotate=0, dither=False, label_type="62"):
+def print_image(image, printer_info, rotate=0, dither=False):
     """Queue a print job."""
     temp_dir = tempfile.gettempdir()
     import os
@@ -158,7 +158,7 @@ def print_image(image, printer_info, rotate=0, dither=False, label_type="62"):
         image.save(temp_file_path, "PNG")
         print(f"Image saved to: {temp_file_path}")
 
-    print(f"Using label type: {label_type}")
+    print(f"Using label type: {printer_info['label_type']}")
 
     job_id = print_queue.add_job(
         image,
@@ -166,7 +166,7 @@ def print_image(image, printer_info, rotate=0, dither=False, label_type="62"):
         dither=dither,
         printer_info=printer_info,
         temp_file_path=temp_file_path,
-        label_type=label_type
+        label_type=printer_info["label_type"]
     )
 
     status = print_queue.get_job_status(job_id)
