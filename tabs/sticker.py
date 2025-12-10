@@ -172,7 +172,7 @@ def render(preper_image, print_image, safe_filename,label_width):
             filename = safe_filename(os.path.basename(image_url))
             
             # Process the fetched image
-            grayscale_image, dithered_image = preper_image(image_to_process, label_width=label_width)
+            grayscale_image, dithered_image = preper_image(image_to_process, label_width=printer_info['label_width'])
             
             # Create checkboxes for rotation and dithering
             col1, col2 = st.columns(2)
