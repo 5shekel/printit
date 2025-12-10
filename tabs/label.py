@@ -55,7 +55,7 @@ def render(printer_info, get_fonts, find_url, preper_image, print_image, safe_fi
             print(f"Error in calculate_max_font_size: {e}")
             return 50
 
-    text = st.text_area("Enter your text to print", "write something\n", height=200)
+    text = st.text_area("Enter your text to print", "write something", height=200)
     
     if text:
         urls = find_url(text)

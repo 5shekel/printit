@@ -113,7 +113,7 @@ def get_fonts():
 
 def safe_filename(text):
     epoch_time = int(time.time())
-    return f"{epoch_time}_{hashlib.sha256(text.encode()).hexdigest()}.png"
+    return f"{epoch_time}_{text}.png"
 
 label_dir = "labels"
 os.makedirs(label_dir, exist_ok=True)
@@ -213,6 +213,8 @@ else:
                         preper_image=preper_image,
                         print_image=print_image,
                         printer_info=selected_printer,
+                        safe_filename=safe_filename,
+                        label_dir=label_dir,
                     )
                 elif tab_name == "Webcam":
                     import tabs.webcam as webcam_module
@@ -229,6 +231,8 @@ else:
                         printer_info=selected_printer,
                         preper_image=preper_image,
                         print_image=print_image,
+                        safe_filename=safe_filename,
+                        label_dir=label_dir,
                     )
                 elif tab_name == "Dog":
                     import tabs.dog as dog_module
@@ -236,10 +240,10 @@ else:
                         printer_info=selected_printer,
                         preper_image=preper_image,
                         print_image=print_image,
+                        safe_filename=safe_filename,
+                        label_dir=label_dir,
                     )
-                elif tab_name == "FAQ":
-                    import tabs.faq as faq_module
-                    faq_module.render()
+
                 elif tab_name == "Sticker Pro":
                     import tabs.sticker_pro as sticker_pro_module    
                     sticker_pro_module.render(
@@ -250,6 +254,8 @@ else:
                         resize_image_to_width=resize_image_to_width,
                         preper_image=preper_image,
                         printer_info=selected_printer,
+                        safe_filename=safe_filename,
+                        label_dir=label_dir,
                     )
                 elif tab_name == "History":
                     import tabs.history as history_module
@@ -260,6 +266,9 @@ else:
                         print_image=print_image,
                         preper_image=preper_image,
                     )
+                elif tab_name == "FAQ":
+                    import tabs.faq as faq_module
+                    faq_module.render()
                 else:
                     st.warning(f"Tab '{tab_name}' is not implemented yet")
             except Exception as e:

@@ -4,9 +4,10 @@ import streamlit as st
 import requests
 from io import BytesIO
 from PIL import Image
+import os
 
 
-def render(preper_image,printer_info, print_image):
+def render(preper_image,printer_info, print_image,safe_filename, label_dir):
     """Render the Dog tab."""
     st.subheader(":printer: a doggo")
     st.caption("from the fine folks at https://thedogapi.com/")
