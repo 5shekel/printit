@@ -79,8 +79,8 @@ def make_meme_text(image, top_text, bottom_text, font_size=20, outline_width=3):
     return meme_image
 
 
-def render(print_image, apply_threshold, add_border, apply_histogram_equalization, 
-           resize_image_to_width, preper_image, label_width):
+def render(print_image,printer_info, apply_threshold, add_border, apply_histogram_equalization, 
+           resize_image_to_width, preper_image):
     """Render the Sticker Pro tab."""
     st.subheader(":printer: a sticker for pros")
     
@@ -191,7 +191,7 @@ def render(print_image, apply_threshold, add_border, apply_histogram_equalizatio
             
             # Apply target width resizing if specified
             if target_width_mm > 0:
-                image = resize_image_to_width(image, target_width_mm, label_width)
+                image = resize_image_to_width(image, target_width_mm, printer_info['label_width'])
             
             if mirror_checkbox:
                 image = ImageOps.mirror(image)
@@ -219,7 +219,7 @@ def render(print_image, apply_threshold, add_border, apply_histogram_equalizatio
             dithered_image = None
             if print_choice == "Original":
                 dither = st.checkbox("Dither - approximate grey tones with dithering", value=True, key="sticker_pro_dither")
-                grayscale_image, dithered_image = preper_image(image, label_width=label_width)
+                grayscale_image, dithered_image = preper_image(image, label_width=printer_info['label_width'])
                 display_image = dithered_image if dither else grayscale_image
             else:  # Threshold
                 threshold_percent = st.slider("Threshold (%)", 0, 100, 50, key="sticker_pro_threshold")
@@ -270,7 +270,7 @@ def render(print_image, apply_threshold, add_border, apply_histogram_equalizatio
                 print_display_image = make_meme_text(print_display_image, meme_top_text, meme_bottom_text, meme_font_size, meme_outline_width)
             
             if print_choice == "Original":
-                print_image(print_display_image, rotate=rotate, dither=dither)
+                print_image(print_display_image, printer_info, rotate=rotate, dither=dither)
             else:
-                print_image(print_display_image, rotate=rotate, dither=False)
+                print_image(print_display_image, printer_info, rotate=rotate, dither=False)
             st.success("Print job sent to printer!")
