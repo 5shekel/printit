@@ -65,7 +65,7 @@ def list_saved_images(filter_duplicates=True):
     return sorted(unique_images.values(), key=os.path.getmtime, reverse=True)[:HISTORY_LIMIT]
 
 def get_fonts():
-    """Return list of fonts with 5x5-Tami.ttf as default, followed by system fonts"""
+    """Return list of fonts with 5x5-Tami.ttf as default, followed by system fonts (TTF and OTF)"""
     fonts = []
     
     default_font = "fonts/5x5-Tami.ttf"
@@ -74,7 +74,7 @@ def get_fonts():
     
     try:
         for font_file in os.listdir("fonts/"):
-            if font_file.endswith(".ttf") and font_file != "5x5-Tami.ttf":
+            if (font_file.endswith(".ttf") or font_file.endswith(".otf")) and font_file != "5x5-Tami.ttf":
                 fonts.append("fonts/" + font_file)
     except OSError:
         pass

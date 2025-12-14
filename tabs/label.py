@@ -100,7 +100,7 @@ def render(printer_info, get_fonts, find_url, preper_image, print_image, safe_fi
                 try:
                     test_default = ImageFont.load_default()
                     font = None
-                    st.warning("No TrueType fonts available, using PIL default font")
+                    st.warning("No TrueType or OpenType fonts available, using PIL default font")
                 except Exception:
                     st.error("Unable to load any fonts. Please check your system font installation.")
                     st.stop()
@@ -194,19 +194,24 @@ def render(printer_info, get_fonts, find_url, preper_image, print_image, safe_fi
                     max_size = calculate_max_font_size(label_width, text, font)
             except Exception as e:
                 print(f"Error calculating font size for {font}: {e}")
-            font_size = st.slider("Font Size", 20, max_size + 50, max_size)
+            font_size = st.slider("Font Size", 20, max_size + 50, max_size, help="Supports both TTF and OTF fonts")
 
         try:
             if font is None:
                 fnt = ImageFont.load_default()
             else:
-                fnt = ImageFont.truetype(font, font_size)
-        except OSError:
+                try:
+                    fnt = ImageFont.truetype(font, font_size)
+                except (OSError, TypeError):
+                    # Fallback if font loading fails (TTF or OTF)
+                    fnt = ImageFont.load_default()
+                    st.warning(f"Font {font} not found, using default font.")
+        except Exception as e:
             try:
                 fnt = ImageFont.load_default()
-                st.warning(f"Font {font} not found, using default font.")
-            except Exception as e:
-                st.error(f"Error loading font: {e}")
+                st.warning(f"Error loading font {font}: {e}")
+            except Exception as load_e:
+                st.error(f"Error loading font: {load_e}")
         
         line_spacing = 20
         new_image_height = calculate_actual_image_height_with_empty_lines(text, fnt, line_spacing)
