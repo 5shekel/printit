@@ -115,28 +115,12 @@ venv.bak/
 # idea
 .idea/*
 
-/temp
 .streamlit/secrets.toml
+.streamlit/config.toml
 /labels
-/cats
 
- **/.secrets.toml.swp
-fonts/DOCALLISME ON STREET.ttf
-fonts/Impact.ttf
-fonts/Next Custom.ttf
-fonts/Orbitron-Black.ttf
-fonts/Orbitron-Bold.ttf
-fonts/Orbitron-ExtraBold.ttf
-fonts/Orbitron-Medium.ttf
-fonts/Orbitron-Regular.ttf
-fonts/Orbitron-SemiBold.ttf
-fonts/PixelifySans-Bold.ttf
-fonts/PixelifySans-Medium.ttf
-fonts/PixelifySans-Regular.ttf
-fonts/PixelifySans-SemiBold.ttf
-fonts/PixelifySans-VariableFont_wght.ttf
-fonts/Smasher 312 Custom.ttf
-fonts/Vandalust.ttf
-fonts/Xandercode.ttf
-job_queue_old.py
-printer_utils_old.py
+**/.secrets.toml.swp
+
+fonts/*.ttf
+fonts/*.otf
+!fonts/5x5-Tami.tt
