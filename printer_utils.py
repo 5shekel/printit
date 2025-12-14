@@ -3,6 +3,8 @@
 import subprocess
 import tempfile
 import time
+import tomllib
+from pathlib import Path
 from brother_ql.models import ModelsManager
 from brother_ql.backends import backend_factory
 from brother_ql import labels
@@ -14,7 +16,19 @@ from dataclasses import dataclass
 
 import streamlit as st
 from job_queue import print_queue
-from config import PRIVACY_MODE
+
+# Load configuration directly from config.toml
+def _load_config():
+    """Load config.toml from the workspace root."""
+    config_path = Path(__file__).parent / "config.toml"
+    try:
+        with open(config_path, "rb") as f:
+            return tomllib.load(f)
+    except (FileNotFoundError, Exception):
+        return {}
+
+_CONFIG = _load_config()
+PRIVACY_MODE = _CONFIG.get("app", {}).get("privacy_mode", True)
 
 def safe_filename(text):
     epoch_time = int(time.time())

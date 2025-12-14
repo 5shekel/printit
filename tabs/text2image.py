@@ -5,9 +5,23 @@ import requests
 import io
 import base64
 import os
+import tomllib
+from pathlib import Path
 from PIL import Image, PngImagePlugin
 from datetime import datetime
-from config import TXT2IMG_URL
+
+# Load configuration directly from config.toml
+def _load_config():
+    """Load config.toml from the workspace root."""
+    config_path = Path(__file__).parent.parent / "config.toml"
+    try:
+        with open(config_path, "rb") as f:
+            return tomllib.load(f)
+    except (FileNotFoundError, Exception):
+        return {}
+
+_CONFIG = _load_config()
+TXT2IMG_URL = _CONFIG.get("txt2img", {}).get("url", "http://localhost:7860")
 
 
 def generate_image(prompt, steps, label_width):

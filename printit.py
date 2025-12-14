@@ -4,8 +4,9 @@ import os
 import re
 import time
 import hashlib
+import tomllib
+from pathlib import Path
 from brother_ql import labels
-from config import PRIVACY_MODE
 
 
 # Tabs get imported only when enabled in config.toml
@@ -26,12 +27,46 @@ from printer_utils import (
     # get_label_type
 )
 
-# Import configuration
-from config import (
-    get_enabled_tabs,
-    APP_TITLE,
-    HISTORY_LIMIT,
-)
+# Load configuration directly from config.toml
+def _load_config():
+    """Load config.toml from the workspace root."""
+    config_path = Path(__file__).parent / "config.toml"
+    try:
+        with open(config_path, "rb") as f:
+            return tomllib.load(f)
+    except FileNotFoundError:
+        st.error(f"config.toml not found at {config_path}")
+        return {}
+    except Exception as e:
+        st.error(f"Error loading config.toml: {e}")
+        return {}
+
+_CONFIG = _load_config()
+_app_config = _CONFIG.get("app", {})
+_ui_config = _CONFIG.get("ui", {})
+_tabs_config = _CONFIG.get("tabs", {})
+
+APP_TITLE = _app_config.get("title", "STICKER FACTORY")
+PRIVACY_MODE = _app_config.get("privacy_mode", True)
+HISTORY_LIMIT = _ui_config.get("history_limit", 15)
+
+def get_enabled_tabs():
+    """Return list of enabled tab names, excluding History if privacy_mode is true."""
+    enabled = _tabs_config.get("enabled", [
+        "Sticker",
+        "Sticker Pro",
+        "Label",
+        "Text2image",
+        "Webcam",
+        "Cat",
+        "Dog",
+        "History",
+        "FAQ",
+    ])
+    # Filter out History if privacy_mode is enabled
+    if PRIVACY_MODE and "History" in enabled:
+        enabled = [tab for tab in enabled if tab != "History"]
+    return enabled
 
 
 def list_saved_images(filter_duplicates=True):
@@ -159,6 +194,7 @@ else:
 
     # Get enabled tabs from configuration
     enabled_tab_names = get_enabled_tabs()
+    print("Enabled tabs:", enabled_tab_names)
 
     if not enabled_tab_names:
         st.error("❌ No tabs are enabled! Check tabs/__init__.py ENABLED_TABS configuration")
@@ -241,7 +277,7 @@ else:
                         preper_image=preper_image,
                         printer_info=selected_printer,
                     )
-                elif tab_name == "History" and not PRIVACY_MODE:
+                elif tab_name == "History":
                     import tabs.history as history_module
                     history_module.render(
                         list_saved_images=list_saved_images,
