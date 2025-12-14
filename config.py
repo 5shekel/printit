@@ -59,8 +59,8 @@ ENABLED_TABS = {tab: True for tab in get_enabled_tabs()}
 
 # Get settings from config.toml with fallback defaults
 _app_config = _CONFIG.get("app", {})
-LABEL_TYPE = _app_config.get("label_type", "62")
 APP_TITLE = _app_config.get("title", "STICKER FACTORY")
+PRIVACY_MODE = _app_config.get("privacy_mode", False)
 
 _ui_config = _CONFIG.get("ui", {})
 HISTORY_LIMIT = _ui_config.get("history_limit", 15)
@@ -70,12 +70,13 @@ QUEUE_VIEW = _ui_config.get("queue_view", True)
 _txt2img_config = _CONFIG.get("txt2img", {})
 TXT2IMG_URL = _txt2img_config.get("url", "http://localhost:7860")
 
+
 # ============================================================================
 # API CONFIGURATION (from secrets.toml)
 # ============================================================================
 
 # API keys are kept in secrets.toml for security
-CAT_API_KEY = st.secrets.get("cat_api_key", "")
+#CAT_API_KEY = st.secrets.get("cat_api_key", "")
 
 __all__ = [
     'get_enabled_tabs',
@@ -87,5 +88,5 @@ __all__ = [
     'ITEMS_PER_PAGE',
     'QUEUE_VIEW',
     'TXT2IMG_URL',
-    'CAT_API_KEY',
+    'PRIVACY_MODE'
 ]
