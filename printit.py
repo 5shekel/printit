@@ -5,6 +5,7 @@ import re
 import time
 import hashlib
 from brother_ql import labels
+from config import PRIVACY_MODE
 
 
 # Tabs get imported only when enabled in config.toml
@@ -180,7 +181,6 @@ else:
                         printer_info=selected_printer,
                         preper_image=preper_image,
                         print_image=print_image,
-                        safe_filename=safe_filename,
                     )
                 elif tab_name == "Label":
                     import tabs.label as label_module
@@ -190,7 +190,6 @@ else:
                         find_url=find_url,
                         preper_image=preper_image,
                         print_image=print_image,
-                        safe_filename=safe_filename,
                         label_dir=label_dir,
                         img_concat_v=img_concat_v,
                     )
@@ -213,7 +212,6 @@ else:
                         preper_image=preper_image,
                         print_image=print_image,
                         printer_info=selected_printer,
-                        safe_filename=safe_filename,
                         label_dir=label_dir,
                     )
                 elif tab_name == "Webcam":
@@ -222,7 +220,6 @@ else:
                         printer_info=selected_printer,
                         preper_image=preper_image,
                         print_image=print_image,
-                        safe_filename=safe_filename,
                         label_dir=label_dir,
                     )
                 elif tab_name == "Cat":
@@ -231,7 +228,6 @@ else:
                         printer_info=selected_printer,
                         preper_image=preper_image,
                         print_image=print_image,
-                        safe_filename=safe_filename,
                         label_dir=label_dir,
                     )
                 elif tab_name == "Dog":
@@ -240,7 +236,6 @@ else:
                         printer_info=selected_printer,
                         preper_image=preper_image,
                         print_image=print_image,
-                        safe_filename=safe_filename,
                         label_dir=label_dir,
                     )
 
@@ -254,15 +249,13 @@ else:
                         resize_image_to_width=resize_image_to_width,
                         preper_image=preper_image,
                         printer_info=selected_printer,
-                        safe_filename=safe_filename,
                         label_dir=label_dir,
                     )
-                elif tab_name == "History":
+                elif tab_name == "History" and not PRIVACY_MODE:
                     import tabs.history as history_module
                     history_module.render(
                         list_saved_images=list_saved_images,
                         label_dir=label_dir,
-                        safe_filename=safe_filename,
                         print_image=print_image,
                         preper_image=preper_image,
                     )

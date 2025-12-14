@@ -3,7 +3,7 @@
 # This tab requires many helper functions from the main file
 # Import and use from printit.py context
 
-def render(printer_info, get_fonts, find_url, preper_image, print_image, safe_filename, label_dir, img_concat_v):
+def render(printer_info, get_fonts, find_url, preper_image, print_image, label_dir, img_concat_v):
     """Render the Label tab - implementation from main printit.py."""
     import streamlit as st
     import os
@@ -269,9 +269,3 @@ def render(printer_info, get_fonts, find_url, preper_image, print_image, safe_fi
             * label will automaticly resize to fit the longest line, so use linebreaks.
             * on pc `ctrl+enter` will submit, on mobile click outside the `text_area` to process.
         """)
-        
-        if text != "write something":
-            filename = safe_filename(text)
-            file_path = os.path.join(label_dir, filename)
-            img.save(file_path, "PNG")
-            st.success(f"Label saved as {filename}")

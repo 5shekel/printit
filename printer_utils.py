@@ -14,6 +14,7 @@ from dataclasses import dataclass
 
 import streamlit as st
 from job_queue import print_queue
+from config import PRIVACY_MODE
 
 @dataclass
 class PrinterInfo:
@@ -179,6 +180,16 @@ def print_image(image, printer_info, rotate=0, dither=False):
 
     if status.status == "completed":
         status_container.success("Print job completed successfully!")
+        if PRIVACY_MODE:
+            # Clear the image from memory or perform any privacy-related actions
+            image.close()
+        else:
+            filename = safe_filename("Stikka-")
+            file_path = os.path.join(label_dir, filename)
+            image.save(file_path, "PNG")
+            status_container.success(f"Sticker saved as {filename}")
+
+
         return True
     else:
         status_container.error(f"Print job failed: {status.error}")

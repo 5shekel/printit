@@ -7,7 +7,7 @@ from PIL import Image
 import os
 
 
-def render(preper_image,printer_info, print_image,safe_filename, label_dir):
+def render(preper_image,printer_info, print_image, label_dir):
     """Render the Cat tab."""
     st.subheader(":printer: a cat")
     st.caption("from the fine folks at https://thecatapi.com/")
@@ -54,8 +54,3 @@ def render(preper_image,printer_info, print_image,safe_filename, label_dir):
             if st.button("Print Cat", key="print_cat"):
                 print_image(st.session_state.cat_image, printer_info, dither=True)
                 st.success("Cat sent to printer!")
-            
-                filename = safe_filename("cat")
-                file_path = os.path.join(label_dir, filename)
-                st.session_state.cat_image.save(file_path, "PNG")
-                st.success(f"Cat saved as {filename}")

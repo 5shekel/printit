@@ -30,7 +30,7 @@ def fetch_image_from_url(url):
         return None
 
 
-def render(preper_image, print_image, safe_filename,printer_info):
+def render(preper_image, print_image,printer_info):
     """Render the Sticker tab."""
     st.subheader(":printer: a sticker")
 
@@ -169,7 +169,6 @@ def render(preper_image, print_image, safe_filename,printer_info):
         # Try to fetch and process image from URL
         image_to_process = fetch_image_from_url(image_url)
         if image_to_process:
-            filename = safe_filename(os.path.basename(image_url))
             
             # Process the fetched image
             grayscale_image, dithered_image = preper_image(image_to_process, label_width=printer_info['label_width'])
@@ -204,7 +203,7 @@ def render(preper_image, print_image, safe_filename,printer_info):
             else:
                 st.image(image_to_process, caption="Original Image")
 
-            # Save original image
-            original_image_path = os.path.join("temp", filename)
-            image_to_process.save(original_image_path, "PNG")
+            # # Save original image
+            # original_image_path = os.path.join("temp", filename)
+            # image_to_process.save(original_image_path, "PNG")
 

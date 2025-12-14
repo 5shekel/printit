@@ -6,7 +6,7 @@ from PIL import Image
 from datetime import datetime
 
 
-def render(list_saved_images, label_dir, safe_filename, print_image, preper_image):
+def render(list_saved_images, label_dir, print_image, preper_image):
     """Render the History tab."""
     st.subheader("Gallery of Labels and Stickers")
     

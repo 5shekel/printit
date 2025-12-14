@@ -4,6 +4,7 @@
 
 [app]
 title = "STIKKA FACTORY"
+privacy_mode = false
 
 [ui]
 history_limit = 15
