@@ -3,7 +3,7 @@
 # This tab requires many helper functions from the main file
 # Import and use from printit.py context
 
-def render(printer_info, get_fonts, find_url, preper_image, print_image, label_dir, img_concat_v):
+def render(printer_info, get_fonts, find_url, preper_image, print_image, img_concat_v):
     """Render the Label tab - implementation from main printit.py."""
     import streamlit as st
     import os

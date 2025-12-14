@@ -60,7 +60,7 @@ ENABLED_TABS = {tab: True for tab in get_enabled_tabs()}
 # Get settings from config.toml with fallback defaults
 _app_config = _CONFIG.get("app", {})
 APP_TITLE = _app_config.get("title", "STICKER FACTORY")
-PRIVACY_MODE = _app_config.get("privacy_mode", False)
+PRIVACY_MODE = _app_config.get("privacy_mode", True)
 
 _ui_config = _CONFIG.get("ui", {})
 HISTORY_LIMIT = _ui_config.get("history_limit", 15)

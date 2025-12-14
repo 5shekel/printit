@@ -16,6 +16,10 @@ import streamlit as st
 from job_queue import print_queue
 from config import PRIVACY_MODE
 
+def safe_filename(text):
+    epoch_time = int(time.time())
+    return f"{epoch_time}_{text}.png"
+
 @dataclass
 class PrinterInfo:
     identifier: str
@@ -185,7 +189,7 @@ def print_image(image, printer_info, rotate=0, dither=False):
             image.close()
         else:
             filename = safe_filename("Stikka-")
-            file_path = os.path.join(label_dir, filename)
+            file_path = os.path.join("labels", filename)
             image.save(file_path, "PNG")
             status_container.success(f"Sticker saved as {filename}")
 

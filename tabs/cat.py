@@ -7,7 +7,7 @@ from PIL import Image
 import os
 
 
-def render(preper_image,printer_info, print_image, label_dir):
+def render(preper_image,printer_info, print_image):
     """Render the Cat tab."""
     st.subheader(":printer: a cat")
     st.caption("from the fine folks at https://thecatapi.com/")

@@ -112,10 +112,6 @@ def get_fonts():
     
     return unique_fonts if unique_fonts else ["fonts/5x5-Tami.ttf"]
 
-def safe_filename(text):
-    epoch_time = int(time.time())
-    return f"{epoch_time}_{text}.png"
-
 label_dir = "labels"
 os.makedirs(label_dir, exist_ok=True)
 
@@ -190,7 +186,6 @@ else:
                         find_url=find_url,
                         preper_image=preper_image,
                         print_image=print_image,
-                        label_dir=label_dir,
                         img_concat_v=img_concat_v,
                     )
                 elif tab_name == "Text2image":
@@ -212,7 +207,6 @@ else:
                         preper_image=preper_image,
                         print_image=print_image,
                         printer_info=selected_printer,
-                        label_dir=label_dir,
                     )
                 elif tab_name == "Webcam":
                     import tabs.webcam as webcam_module
@@ -220,7 +214,6 @@ else:
                         printer_info=selected_printer,
                         preper_image=preper_image,
                         print_image=print_image,
-                        label_dir=label_dir,
                     )
                 elif tab_name == "Cat":
                     import tabs.cat as cat_module
@@ -228,7 +221,6 @@ else:
                         printer_info=selected_printer,
                         preper_image=preper_image,
                         print_image=print_image,
-                        label_dir=label_dir,
                     )
                 elif tab_name == "Dog":
                     import tabs.dog as dog_module
@@ -236,7 +228,6 @@ else:
                         printer_info=selected_printer,
                         preper_image=preper_image,
                         print_image=print_image,
-                        label_dir=label_dir,
                     )
 
                 elif tab_name == "Sticker Pro":
@@ -249,13 +240,11 @@ else:
                         resize_image_to_width=resize_image_to_width,
                         preper_image=preper_image,
                         printer_info=selected_printer,
-                        label_dir=label_dir,
                     )
                 elif tab_name == "History" and not PRIVACY_MODE:
                     import tabs.history as history_module
                     history_module.render(
                         list_saved_images=list_saved_images,
-                        label_dir=label_dir,
                         print_image=print_image,
                         preper_image=preper_image,
                     )

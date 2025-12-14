@@ -61,7 +61,7 @@ def submit(st_session_state):
     st_session_state.generated_image = None
 
 
-def render(submit_func, generate_image_func, preper_image, print_image, printer_info, label_dir):
+def render(submit_func, generate_image_func, preper_image, print_image, printer_info):
     """Render the Text2image tab."""
     st.subheader(":printer: image from text")
     st.write("using tami stable diffusion bot")

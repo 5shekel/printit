@@ -80,7 +80,7 @@ def make_meme_text(image, top_text, bottom_text, font_size=20, outline_width=3):
 
 
 def render(print_image,printer_info, apply_threshold, add_border, apply_histogram_equalization, 
-           resize_image_to_width, preper_image, label_dir):
+           resize_image_to_width, preper_image):
     """Render the Sticker Pro tab."""
     st.subheader(":printer: a sticker for pros")
     
