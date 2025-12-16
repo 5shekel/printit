@@ -251,7 +251,7 @@ def render(printer_info, get_fonts, find_url, preper_image, print_image, img_con
             imgqr = qr.make_image(fill_color="black", back_color="white")
 
             if imgqr and img:
-                imgqr = img_concat_v(img, imgqr)
+                imgqr = img_concat_v(img, imgqr,image_width=label_width)
                 st.image(imgqr, width='stretch')
                 if st.button("Print sticker+qr", key="print_sticker_qr"):
                     print_image(imgqr)
