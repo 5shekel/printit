@@ -110,7 +110,6 @@ Traceback (most recent call last):
 - Created `config.toml` in workspace root for all application settings (non-sensitive)
 - Moved settings from `secrets.toml` to `config.toml`: title, label_type, history_limit, items_per_page, queue_view, txt2img_url
 - `secrets.toml` now contains only API keys (cat_api_key)
-- Created `config.py` module to load and expose configuration constants
 
 ### Code Organization
 - Extracted image processing utilities into `image_utils.py`
@@ -121,9 +120,12 @@ Traceback (most recent call last):
 - Updated all `st.image()` calls to use `use_container_width=True` for consistent responsive behavior, **updating streamlit is maybe needed**.
 
 ### Key Files Modified
-- `config.py` - Application configuration loader
 - `config.toml` - Settings file
 - `image_utils.py` - Image processing functions
 - `printer_utils.py` - Printer handling functions
 - `printit.py` - Main app (refactored)
 - `tabs/*.py` - Tab modules (updated imports)
+
+### Privacy mode
+  - disables history tab
+  - deletes labels
