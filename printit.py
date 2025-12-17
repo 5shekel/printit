@@ -176,7 +176,14 @@ st.subheader(":printer: hard copies of images and text")
 
 printers = find_and_parse_printer()
 print("Detected printers:", printers)
-printer_names = [p["model"] for p in printers]
+
+# check printer statuses 
+printer_names=[]
+for p in printers:
+    print(f"\tPrinter: {p['model']}, Status: {p['status']}")
+    if p['status'] == 'Waiting to receive':
+        printer_names.append(p['model'])
+
 printer = st.sidebar.radio("**Select Printer**", printer_names)
 selected_printer = next((p for p in printers if p["model"] == printer), None)
 
