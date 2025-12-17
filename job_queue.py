@@ -1,10 +1,13 @@
 import queue
 import threading
 import time
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional, Dict, Any
 import uuid
+
+logger = logging.getLogger("sticker_factory.job_queue")
 
 @dataclass
 class PrintJob:
@@ -130,14 +133,14 @@ class PrintQueue:
                 except Exception as e:
                     job.status = "failed"
                     job.error = str(e)
-                    print(f"Error processing job {job.id}: {e}")
+                    logger.error(f"Error processing job {job.id}: {e}")
 
                 finally:
                     self.is_processing = False
                     self.queue.task_done()
 
             except Exception as e:
-                print(f"Error in queue processor: {e}")
+                logger.error(f"Error in queue processor: {e}")
                 time.sleep(1)  # Prevent tight loop on repeated errors
 
 # Global print queue instance

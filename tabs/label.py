@@ -1,5 +1,9 @@
 """Label tab content - extracted from main file for modularity."""
 
+import logging
+
+logger = logging.getLogger("sticker_factory.tabs.label")
+
 # This tab requires many helper functions from the main file
 # Import and use from printit.py context
 
@@ -52,7 +56,7 @@ def render(printer_info, get_fonts, find_url, preper_image, print_image, img_con
 
             return max_font_size
         except Exception as e:
-            print(f"Error in calculate_max_font_size: {e}")
+            logger.error(f"Error in calculate_max_font_size: {e}")
             return 50
 
     text = st.text_area("Enter your text to print", "write something", height=200)
@@ -131,7 +135,7 @@ def render(printer_info, get_fonts, find_url, preper_image, print_image, img_con
         except Exception as e:
             max_size = 60
             font_size = max_size
-            print(f"Error calculating font size: {e}")
+            logger.error(f"Error calculating font size: {e}")
 
         fontstuff = st.checkbox("font settings", value=False)
         col1, col2 = st.columns(2)
@@ -193,7 +197,7 @@ def render(printer_info, get_fonts, find_url, preper_image, print_image, img_con
                 else:
                     max_size = calculate_max_font_size(label_width, text, font)
             except Exception as e:
-                print(f"Error calculating font size for {font}: {e}")
+                logger.error(f"Error calculating font size for {font}: {e}")
             font_size = st.slider("Font Size", 20, max_size + 50, max_size, help="Supports both TTF and OTF fonts")
 
         try:

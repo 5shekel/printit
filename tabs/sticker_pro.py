@@ -1,10 +1,13 @@
 """Sticker Pro tab content - advanced image masking and processing with PDF support."""
 
+import logging
 import streamlit as st
 import requests
 import io
 import os
 from PIL import Image, ImageOps, ImageDraw, ImageFont
+
+logger = logging.getLogger("sticker_factory.tabs.sticker_pro")
 
 
 def make_meme_text(image, top_text, bottom_text, font_size=20, outline_width=3):
@@ -242,8 +245,8 @@ def render(print_image,printer_info, apply_threshold, add_border, apply_histogra
                 preview_image = add_border(preview_image)
 
             if meme_checkbox and (meme_top_text or meme_bottom_text):
-                print(type(meme_outline_width))
-                print(type(meme_font_size))
+                logger.debug(f"Meme outline width type: {type(meme_outline_width)}")
+                logger.debug(f"Meme font size type: {type(meme_font_size)}")
                 preview_image = make_meme_text(preview_image, meme_top_text, meme_bottom_text, meme_font_size, meme_outline_width)
         
         with col2:

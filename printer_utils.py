@@ -1,9 +1,11 @@
 """Printer handling and detection utilities for the Sticker Factory."""
 
+import logging
 import subprocess
 import tempfile
 import time
 import tomllib
+import os
 from pathlib import Path
 from brother_ql.models import ModelsManager
 from brother_ql.backends import backend_factory
@@ -16,6 +18,8 @@ from dataclasses import dataclass
 
 import streamlit as st
 from job_queue import print_queue
+
+logger = logging.getLogger("sticker_factory.printer_utils")
 
 # Load configuration directly from config.toml
 def _load_config():
@@ -58,25 +62,25 @@ class PrinterInfo:
 
 
 def find_and_parse_printer():
-    print("Searching for Brother QL printers...")
+    logger.info("Searching for Brother QL printers...")
     model_manager = ModelsManager()
     
     found_printers = []
 
     for backend_name in ["pyusb", "linux_kernel"]:
         try:
-            print(f"Trying backend: {backend_name}")
+            logger.debug(f"Trying backend: {backend_name}")
             backend = backend_factory(backend_name)
             available_devices = backend["list_available_devices"]()
-            print(f"Found {len(available_devices)} devices with {backend_name} backend")
+            logger.debug(f"Found {len(available_devices)} devices with {backend_name} backend")
             
             for printer in available_devices:
-                print(f"Found device: {printer}")
+                logger.debug(f"Found device: {printer}")
                 identifier = printer["identifier"]
                 parts = identifier.split("/")
 
                 if len(parts) < 4:
-                    print(f"Skipping device with invalid identifier format: {identifier}")
+                    logger.warning(f"Skipping device with invalid identifier format: {identifier}")
                     continue
 
                 protocol = parts[0]
@@ -86,7 +90,7 @@ def find_and_parse_printer():
                 try:
                     vendor_id, product_id = device_info.split(":")
                 except ValueError:
-                    print(f"Invalid device info format: {device_info}")
+                    logger.warning(f"Invalid device info format: {device_info}")
                     continue
                 
                 try:
@@ -95,9 +99,9 @@ def find_and_parse_printer():
                         if m.product_id == product_id_int:
                             model = m.identifier
                             break
-                    print(f"Matched printer model: {model}")
+                    logger.debug(f"Matched printer model: {model}")
                 except ValueError:
-                    print(f"Invalid product ID format: {product_id}")
+                    logger.warning(f"Invalid product ID format: {product_id}")
                     continue
 
                 printer_info = PrinterInfo(
@@ -161,7 +165,7 @@ def get_label_width(label_type):
     for label in label_definitions:
         if label.identifier == label_type:
             width = label.dots_printable[0]
-            print(f"Label type {label_type} width: {width} dots")
+            logger.debug(f"Label type {label_type} width: {width} dots")
             return width
     raise ValueError(f"Label type {label_type} not found in label definitions")
 
@@ -169,15 +173,14 @@ def get_label_width(label_type):
 def print_image(image, printer_info, rotate=0, dither=False):
     """Queue a print job."""
     temp_dir = tempfile.gettempdir()
-    import os
     os.makedirs(temp_dir, exist_ok=True)
 
     with tempfile.NamedTemporaryFile(suffix=".png", delete=False, dir=temp_dir) as temp_file:
         temp_file_path = temp_file.name
         image.save(temp_file_path, "PNG")
-        print(f"Image saved to: {temp_file_path}")
+        logger.debug(f"Image saved to: {temp_file_path}")
 
-    print(f"Using label type: {printer_info['label_type']}")
+    logger.debug(f"Using label type: {printer_info['label_type']}")
 
     job_id = print_queue.add_job(
         image,
@@ -227,9 +230,9 @@ def process_print_job(image, printer_info, temp_file_path, rotate=0, dither=Fals
         # Prepare the image for printing
         qlr = BrotherQLRaster(printer_info["model"])
         
-        # Debug print before conversion
+        # Debug log before conversion
         if debug:
-            print(f"Starting print job with label_type: {label_type}")
+            logger.debug(f"Starting print job with label_type: {label_type}")
         
         instructions = convert(
             qlr=qlr,
@@ -247,7 +250,7 @@ def process_print_job(image, printer_info, temp_file_path, rotate=0, dither=Fals
 
         # Debug logging
         if debug:
-            print(f"""
+            logger.debug(f"""
             Print parameters:
             - Label type: {label_type}
             - Rotate: {rotate}
@@ -273,15 +276,15 @@ def process_print_job(image, printer_info, temp_file_path, rotate=0, dither=Fals
         # Treat timeout errors as successful since they often occur after print completion
         if e.errno == 110:  # Operation timed out
             if debug:
-                print("USB timeout occurred - this is normal and the print likely completed")
+                logger.debug("USB timeout occurred - this is normal and the print likely completed")
             return True, "Print completed (timeout is normal)"
         error_msg = f"USBError encountered: {e}"
         if debug:
-            print(error_msg)
+            logger.debug(error_msg)
         return False, error_msg
 
     except Exception as e:
         error_msg = f"Unexpected error during printing: {str(e)}"
         if debug:
-            print(error_msg)
+            logger.debug(error_msg)
         return False, error_msg

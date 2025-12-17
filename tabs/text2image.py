@@ -1,5 +1,6 @@
 """Text2image tab content."""
 
+import logging
 import streamlit as st
 import requests
 import io
@@ -9,6 +10,8 @@ import tomllib
 from pathlib import Path
 from PIL import Image, PngImagePlugin
 from datetime import datetime
+
+logger = logging.getLogger("sticker_factory.tabs.text2image")
 
 # Load configuration directly from config.toml
 def _load_config():
@@ -35,7 +38,7 @@ def generate_image(prompt, steps, label_width):
         response = requests.post(url=f'{TXT2IMG_URL}/sdapi/v1/txt2img', json=payload)
         response.raise_for_status()
 
-        print("Raw response content:", response.content)
+        logger.debug("Raw response content: %s", response.content)
 
         r = response.json()
 
@@ -60,11 +63,11 @@ def generate_image(prompt, steps, label_width):
 
             return image
         else:
-            print("No images found in the response")
+            logger.warning("No images found in the response")
             return None
 
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {e}")
         return None
 
 

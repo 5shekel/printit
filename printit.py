@@ -4,10 +4,12 @@ import os
 import re
 import time
 import hashlib
+import logging
 import tomllib
 from pathlib import Path
 from brother_ql import labels
 
+logger = logging.getLogger("sticker_factory.printit")
 
 # Tabs get imported only when enabled in config.toml
 
@@ -95,7 +97,7 @@ def list_saved_images(filter_duplicates=True):
             else:
                 unique_images[file_size] = image_path
         except Exception as e:
-            print(f"Error processing {image_path}: {e}")
+            logger.error(f"Error processing {image_path}: {e}")
             continue
 
     return sorted(unique_images.values(), key=os.path.getmtime, reverse=True)[:HISTORY_LIMIT]
@@ -175,12 +177,12 @@ st.subheader(":printer: hard copies of images and text")
 
 
 printers = find_and_parse_printer()
-print("Detected printers:", printers)
+logger.info(f"Detected printers: {printers}")
 
 # check printer statuses 
 printer_names=[]
 for p in printers:
-    print(f"\tPrinter: {p['model']}, Status: {p['status']}")
+    logger.debug(f"\tPrinter: {p['model']}, Status: {p['status']}")
     if p['status'] == 'Waiting to receive':
         printer_names.append(p['model'])
 
@@ -201,7 +203,7 @@ else:
 
     # Get enabled tabs from configuration
     enabled_tab_names = get_enabled_tabs()
-    print("Enabled tabs:", enabled_tab_names)
+    logger.info(f"Enabled tabs: {enabled_tab_names}")
 
     if not enabled_tab_names:
         st.error("❌ No tabs are enabled! Check tabs/__init__.py ENABLED_TABS configuration")
@@ -298,6 +300,4 @@ else:
                     st.warning(f"Tab '{tab_name}' is not implemented yet")
             except Exception as e:
                 st.error(f"Error rendering {tab_name} tab: {str(e)}")
-                print(f"Exception in tab {tab_name}: {e}")
-                import traceback
-                traceback.print_exc()
+                logger.error(f"Exception in tab {tab_name}: {e}", exc_info=True)

@@ -1,10 +1,13 @@
 """Cat tab content."""
 
+import logging
 import streamlit as st
 import requests
 from io import BytesIO
 from PIL import Image
 import os
+
+logger = logging.getLogger("sticker_factory.tabs.dog")
 
 
 def render(preper_image,printer_info, print_image):
@@ -36,7 +39,7 @@ def render(preper_image,printer_info, print_image):
                 response.raise_for_status()
                 image_url = response.json()[0]["url"]
                 
-                print(f"Fetched cat image URL: {image_url}")
+                logger.debug(f"Fetched dog image URL: {image_url}")
                 # Download and process image
                 img = Image.open(BytesIO(requests.get(image_url).content)).convert('RGB')
                 grayscale_image, dithered_image = preper_image(img, label_width=printer_info['label_width'])

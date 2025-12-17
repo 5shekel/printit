@@ -1,6 +1,9 @@
 """Image processing and conversion utilities for the Sticker Factory."""
 
+import logging
 from PIL import Image, ImageOps
+
+logger = logging.getLogger("sticker_factory.image_utils")
 
 
 def preper_image(image, label_width):
@@ -14,7 +17,7 @@ def preper_image(image, label_width):
     if width != label_width:
         new_height = int((label_width / width) * height)
         image = image.resize((label_width, new_height))
-        print(f"Resizing image from ({width}, {height}) >> {image.size}")
+        logger.debug(f"Resizing image from ({width}, {height}) >> {image.size}")
 
     if image.mode != "L":
         grayscale_image = image.convert("L")
@@ -48,8 +51,8 @@ def resize_image_to_width(image, target_width_mm, label_width, current_dpi=300):
         new_image.paste(resized_image, ((label_width - target_width_px) // 2, 0))
         resized_image = new_image
 
-    print(f"Image resized from {image.width}x{image.height} to {resized_image.width}x{resized_image.height} pixels.")
-    print(f"Target width was {target_width_mm}mm ({target_width_px}px)")
+    logger.debug(f"Image resized from {image.width}x{image.height} to {resized_image.width}x{resized_image.height} pixels.")
+    logger.debug(f"Target width was {target_width_mm}mm ({target_width_px}px)")
     return resized_image
 
 
