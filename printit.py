@@ -9,6 +9,8 @@ import tomllib
 from pathlib import Path
 from brother_ql import labels
 
+# Initialize logging configuration (must be done first!)
+import logging_config
 logger = logging.getLogger("sticker_factory.printit")
 
 # Tabs get imported only when enabled in config.toml
@@ -177,7 +179,6 @@ st.subheader(":printer: hard copies of images and text")
 
 
 printers = find_and_parse_printer()
-logger.info(f"Detected printers: {printers}")
 
 # check printer statuses 
 printer_names=[]
@@ -203,7 +204,7 @@ else:
 
     # Get enabled tabs from configuration
     enabled_tab_names = get_enabled_tabs()
-    logger.info(f"Enabled tabs: {enabled_tab_names}")
+    logger.debug(f"Enabled tabs: {enabled_tab_names}")
 
     if not enabled_tab_names:
         st.error("❌ No tabs are enabled! Check tabs/__init__.py ENABLED_TABS configuration")

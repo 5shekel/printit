@@ -116,10 +116,10 @@ def find_and_parse_printer():
                 found_printers.append(printer_info)            
                 get_printer_status(printer_info)
                 printer_info['name'] = f"{printer_info['model']} - H{serial_number.split('H')[-1]} - {printer_info['label_size']}"
-                print(f"Added printer: {printer_info}")
+                logger.debug(f"Added printer: {printer_info}")
 
         except Exception as e:
-            print(f"Error with backend {backend_name}: {str(e)}")
+            logger.error(f"Error with backend {backend_name}: {str(e)}")
             continue    
     return found_printers
 
@@ -131,7 +131,6 @@ def get_printer_status(printer):
         for line in result.stdout.splitlines():
             if "Phase:" in line:
                 printer['status'] = line.split("Phase:")[1].strip()
-                print(f"Printer {printer['identifier']} status: {printer['status']}")
             if "Media size:" in line:
                 printer['label_size'] = line.split("Media size:")[1].strip()
                 size_str = line.split("Media size:")[1].strip().split('x')[0].strip()
@@ -146,9 +145,9 @@ def get_printer_status(printer):
                         printer['label_type'] = label_type
                         printer['label_width'] = get_label_width(label_type)
                         printer['label_height'] = None
-                        print(f"Printer {printer['identifier']} label type: {label_type}")
                 except ValueError:
-                    continue
+                    logger.error(f"Invalid media width format: {size_str}")
+        logger.info(f"Printer {printer['model']}: label type: {label_type}, status: {printer['status']}")
 
     except Exception as e:
         #print(f"Error getting status for printer {printer['identifier']}: {str(e)}")
@@ -178,9 +177,9 @@ def print_image(image, printer_info, rotate=0, dither=False):
     with tempfile.NamedTemporaryFile(suffix=".png", delete=False, dir=temp_dir) as temp_file:
         temp_file_path = temp_file.name
         image.save(temp_file_path, "PNG")
-        logger.debug(f"Image saved to: {temp_file_path}")
+        logger.info(f"Image saved to: {temp_file_path}")
 
-    logger.debug(f"Using label type: {printer_info['label_type']}")
+    logger.info(f"Using label type: {printer_info['label_type']}")
 
     job_id = print_queue.add_job(
         image,

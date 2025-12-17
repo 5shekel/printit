@@ -1,9 +1,12 @@
 """Sticker tab content."""
 
+import logging
 import streamlit as st
 import os
 from PIL import Image
 import io
+
+logger = logging.getLogger("sticker_factory.tabs.sticker")
 
 
 def fetch_image_from_url(url):
@@ -154,16 +157,20 @@ def render(preper_image, print_image,printer_info):
                 print_image(image_to_process,printer_info, rotate=rotate_value, dither=dither_value)
 
             # Display image based on checkbox status
-            if dither_checkbox:
-                st.image(dithered_image, caption="Resized and Dithered Image")
-            else:
-                st.image(image_to_process, caption="Original Image")
-
-            # Create 'temp' directory if it doesn't exist
-            os.makedirs("temp", exist_ok=True)
+            try:
+                if dither_checkbox:
+                    st.image(dithered_image, caption="Resized and Dithered Image")
+                else:
+                    st.image(image_to_process, caption="Original Image")
             
-            # Save original image
-            image_to_process.save(original_image_path, "PNG")
+
+                # Create 'temp' directory if it doesn't exist
+                os.makedirs("temp", exist_ok=True)
+                
+                # Save original image
+                image_to_process.save(original_image_path, "PNG")
+            except ValueError as e:
+                logger.error(f"Error displaying image: {str(e)}")
         
     elif image_url:
         # Try to fetch and process image from URL
