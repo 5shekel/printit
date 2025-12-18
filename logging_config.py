@@ -63,9 +63,9 @@ file_handler = logging.handlers.RotatingFileHandler(
     maxBytes=10485760,  # 10MB
     backupCount=5
 )
-file_handler.setLevel(logging.DEBUG)
+file_handler.setLevel(logging.WARNING)
 file_handler.setFormatter(detailed_formatter)
-logger.addHandler(file_handler)
+# logger.addHandler(file_handler)
 
 # Prevent propagation to root logger
 logger.propagate = False
