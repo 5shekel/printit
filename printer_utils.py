@@ -17,14 +17,9 @@ from dataclasses import dataclass
 
 import streamlit as st
 from job_queue import print_queue
+from config_manager import PRIVACY_MODE
 
 logger = logging.getLogger("sticker_factory.printer_utils")
-
-# Import PRIVACY_MODE from printit at runtime to avoid circular imports
-def get_privacy_mode():
-    """Get PRIVACY_MODE from printit config."""
-    import printit
-    return printit.PRIVACY_MODE
 
 def safe_filename(text):
     epoch_time = int(time.time())
@@ -195,7 +190,7 @@ def print_image(image, printer_info, rotate=0, dither=False):
 
     if status.status == "completed":
         status_container.success("Print job completed successfully!")
-        if get_privacy_mode():
+        if PRIVACY_MODE:
             # Clear the image from memory or perform any privacy-related actions
             image.close()
         else:

@@ -5,7 +5,6 @@ import re
 import time
 import hashlib
 import logging
-import tomllib
 from pathlib import Path
 from brother_ql import labels
 
@@ -13,31 +12,13 @@ from brother_ql import labels
 import logging_config
 logger = logging.getLogger("sticker_factory.printit")
 
-# Load configuration once at app startup
-def _load_config():
-    """Load config.toml from the workspace root."""
-    config_path = Path(__file__).parent / "config.toml"
-    try:
-        with open(config_path, "rb") as f:
-            config = tomllib.load(f)
-            logger.info("Config loaded successfully from config.toml")
-            return config
-    except FileNotFoundError:
-        logger.error(f"config.toml not found at {config_path}")
-        return {}
-    except Exception as e:
-        logger.error(f"Error loading config.toml: {e}")
-        return {}
-
-# Load config once at startup
-CONFIG = _load_config()
-APP_CONFIG = CONFIG.get("app", {})
-UI_CONFIG = CONFIG.get("ui", {})
-TABS_CONFIG = CONFIG.get("tabs", {})
-
-APP_TITLE = APP_CONFIG.get("title", "STICKER FACTORY")
-PRIVACY_MODE = APP_CONFIG.get("privacy_mode", True)
-HISTORY_LIMIT = UI_CONFIG.get("history_limit", 15)
+# Import centralized config (loads once at startup)
+from config_manager import (
+    APP_TITLE,
+    PRIVACY_MODE,
+    HISTORY_LIMIT,
+    TABS_CONFIG,
+)
 
 # Tabs get imported only when enabled in config.toml
 
@@ -58,11 +39,12 @@ from printer_utils import (
 )
 
 def get_enabled_tabs():
-    """Return list of enabled tab names, excluding History if privacy_mode is true."""
+    """Return list of enabled tab names from config, excluding History if privacy_mode is true."""
+    # Get the enabled tabs list directly from config (preserves order)
     enabled = TABS_CONFIG.get("enabled", [
+        "Label",
         "Sticker",
         "Sticker Pro",
-        "Label",
         "Text2image",
         "Webcam",
         "Cat",
@@ -70,6 +52,7 @@ def get_enabled_tabs():
         "History",
         "FAQ",
     ])
+    
     # Filter out History if privacy_mode is enabled
     if PRIVACY_MODE and "History" in enabled:
         enabled = [tab for tab in enabled if tab != "History"]
@@ -179,7 +162,6 @@ if not os.path.exists(".streamlit/secrets.toml"):
 
 st.title(f":rainbow[**{APP_TITLE}**]")
 st.subheader(":primary[:printer: hard copies of images and text]")
-
 
 
 st.sidebar.title(":primary[Settings]")
