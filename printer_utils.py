@@ -145,12 +145,12 @@ def get_printer_status(printer):
                         printer['label_type'] = label_type
                         printer['label_width'] = get_label_width(label_type)
                         printer['label_height'] = None
-                except ValueError:
-                    logger.error(f"Invalid media width format: {size_str}")
+                except Exception as e:
+                    logger.error(f"Exception parsing media width: {str(e)}")
         logger.info(f"Printer {printer['model']}: label type: {label_type}, status: {printer['status']}")
 
     except Exception as e:
-        #print(f"Error getting status for printer {printer['identifier']}: {str(e)}")
+        logger.error(f"Error getting status for printer {printer['model']}: {str(e)}")
         printer['status'] = str(e)
         printer['label_type'] = "unknown"
         printer['label_size'] = "unknown"
