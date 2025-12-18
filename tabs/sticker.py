@@ -30,7 +30,7 @@ def fetch_image_from_url(url):
         return None
 
 
-def render(preper_image, print_image, safe_filename,label_width):
+def render(preper_image, print_image, safe_filename,printer_info):
     """Render the Sticker tab."""
     st.subheader(":printer: a sticker")
 
@@ -39,7 +39,7 @@ def render(preper_image, print_image, safe_filename,label_width):
         image_path = st.session_state.selected_image_path
         try:
             image_to_process = Image.open(image_path).convert("RGB")
-            grayscale_image, dithered_image = preper_image(image_to_process, label_width=label_width)
+            grayscale_image, dithered_image = preper_image(image_to_process, label_width=printer_info['label_width'])
             
             st.info(f"Image loaded from history: {os.path.basename(image_path)}")
             
@@ -122,7 +122,7 @@ def render(preper_image, print_image, safe_filename,label_width):
             image_to_process = Image.open(uploaded_image).convert("RGB")
 
         if image_to_process:
-            grayscale_image, dithered_image = preper_image(image_to_process, label_width=label_width)
+            grayscale_image, dithered_image = preper_image(image_to_process, label_width=printer_info['label_width'])
 
             # Paths to save the original and dithered images in the 'temp' directory with postfix
             original_image_path = os.path.join(
@@ -151,7 +151,7 @@ def render(preper_image, print_image, safe_filename,label_width):
             if st.button(button_text, key="sticker_print"):
                 rotate_value = 90 if rotate_checkbox else 0
                 dither_value = dither_checkbox
-                print_image(image_to_process, rotate=rotate_value, dither=dither_value)
+                print_image(image_to_process,printer_info, rotate=rotate_value, dither=dither_value)
 
             # Display image based on checkbox status
             if dither_checkbox:

@@ -6,7 +6,7 @@ from io import BytesIO
 from PIL import Image
 
 
-def render(preper_image, print_image,label_width):
+def render(preper_image,printer_info, print_image):
     """Render the Cat tab."""
     st.subheader(":printer: a cat")
     st.caption("from the fine folks at https://thecatapi.com/")
@@ -38,7 +38,7 @@ def render(preper_image, print_image,label_width):
                 print(f"Fetched cat image URL: {image_url}")
                 # Download and process image
                 img = Image.open(BytesIO(requests.get(image_url).content)).convert('RGB')
-                grayscale_image, dithered_image = preper_image(img, label_width=label_width)
+                grayscale_image, dithered_image = preper_image(img, label_width=printer_info['label_width'])
                 
                 # Store in session state
                 st.session_state.cat_image = grayscale_image
@@ -49,7 +49,7 @@ def render(preper_image, print_image,label_width):
             
         # Show image and print button if we have a cat
         if st.session_state.cat_dithered is not None:
-            st.image(st.session_state.cat_dithered, caption="Cat!")
+            st.image(st.session_state.cat_dithered, printer_info=printer_info, caption="Cat!")
             if st.button("Print Cat", key="print_cat"):
-                print_image(st.session_state.cat_image, dither=True)
+                print_image(st.session_state.cat_image, printer_info, dither=True)
                 st.success("Cat sent to printer!")

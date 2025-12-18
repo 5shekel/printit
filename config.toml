@@ -4,7 +4,6 @@
 
 [app]
 title = "STIKKA FACTORY"
-label_type = "62"
 
 [ui]
 history_limit = 15

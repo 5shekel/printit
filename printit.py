@@ -20,8 +20,9 @@ from image_utils import (
     img_concat_v,
 )
 from printer_utils import (
+    find_and_parse_printer,
     print_image,
-    get_label_type,
+    # get_label_type
 )
 
 # Import configuration
@@ -31,14 +32,6 @@ from config import (
     HISTORY_LIMIT,
 )
 
-# Get label type and width
-label_type, label_status = get_label_type()
-label_width = labels.ALL_LABELS[0].dots_printable[0]
-for label in labels.ALL_LABELS:
-    if label.identifier == label_type:
-        label_width = label.dots_printable[0]
-        print(f"Label type {label_type} width: {label_width} dots")
-        break
 
 def list_saved_images(filter_duplicates=True):
     temp_files = glob.glob(os.path.join("temp", "*.[pj][np][g]*"))
@@ -148,15 +141,16 @@ if not os.path.exists(".streamlit/secrets.toml"):
 st.title(APP_TITLE)
 st.subheader(":printer: hard copies of images and text")
 
-# Get enabled tabs from configuration
-enabled_tab_names = get_enabled_tabs()
 
-if not enabled_tab_names:
-    st.error("❌ No tabs are enabled! Check tabs/__init__.py ENABLED_TABS configuration")
-    st.stop()
+printers = find_and_parse_printer()
+print("Detected printers:", printers)
+printer_names = [p["model"] for p in printers]
+printer = st.sidebar.radio("**Select Printer**", printer_names)
+selected_printer = next((p for p in printers if p["model"] == printer), None)
 
-# Create tabs dynamically
-tab_objects = st.tabs(enabled_tab_names)
+if not selected_printer:
+    st.error("❌ No printer selected or detected! Please check your printer connection and configuration. You may refresh the page to retry detection.")
+    #st.stop()   
 
 else:
     st.sidebar.markdown(f"**Printer Model:** {selected_printer['model']}")
@@ -232,13 +226,6 @@ else:
                 elif tab_name == "Cat":
                     import tabs.cat as cat_module
                     cat_module.render(
-                        printer_info=selected_printer,
-                        preper_image=preper_image,
-                        print_image=print_image,
-                    )
-                elif tab_name == "Dog":
-                    import tabs.dog as dog_module
-                    dog_module.render(
                         printer_info=selected_printer,
                         preper_image=preper_image,
                         print_image=print_image,
