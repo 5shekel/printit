@@ -4,7 +4,6 @@ import logging
 import subprocess
 import tempfile
 import time
-import tomllib
 import os
 from pathlib import Path
 from brother_ql.models import ModelsManager
@@ -21,18 +20,11 @@ from job_queue import print_queue
 
 logger = logging.getLogger("sticker_factory.printer_utils")
 
-# Load configuration directly from config.toml
-def _load_config():
-    """Load config.toml from the workspace root."""
-    config_path = Path(__file__).parent / "config.toml"
-    try:
-        with open(config_path, "rb") as f:
-            return tomllib.load(f)
-    except (FileNotFoundError, Exception):
-        return {}
-
-_CONFIG = _load_config()
-PRIVACY_MODE = _CONFIG.get("app", {}).get("privacy_mode", True)
+# Import PRIVACY_MODE from printit at runtime to avoid circular imports
+def get_privacy_mode():
+    """Get PRIVACY_MODE from printit config."""
+    import printit
+    return printit.PRIVACY_MODE
 
 def safe_filename(text):
     epoch_time = int(time.time())
@@ -203,7 +195,7 @@ def print_image(image, printer_info, rotate=0, dither=False):
 
     if status.status == "completed":
         status_container.success("Print job completed successfully!")
-        if PRIVACY_MODE:
+        if get_privacy_mode():
             # Clear the image from memory or perform any privacy-related actions
             image.close()
         else:

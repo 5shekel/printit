@@ -13,6 +13,32 @@ from brother_ql import labels
 import logging_config
 logger = logging.getLogger("sticker_factory.printit")
 
+# Load configuration once at app startup
+def _load_config():
+    """Load config.toml from the workspace root."""
+    config_path = Path(__file__).parent / "config.toml"
+    try:
+        with open(config_path, "rb") as f:
+            config = tomllib.load(f)
+            logger.info("Config loaded successfully from config.toml")
+            return config
+    except FileNotFoundError:
+        logger.error(f"config.toml not found at {config_path}")
+        return {}
+    except Exception as e:
+        logger.error(f"Error loading config.toml: {e}")
+        return {}
+
+# Load config once at startup
+CONFIG = _load_config()
+APP_CONFIG = CONFIG.get("app", {})
+UI_CONFIG = CONFIG.get("ui", {})
+TABS_CONFIG = CONFIG.get("tabs", {})
+
+APP_TITLE = APP_CONFIG.get("title", "STICKER FACTORY")
+PRIVACY_MODE = APP_CONFIG.get("privacy_mode", True)
+HISTORY_LIMIT = UI_CONFIG.get("history_limit", 15)
+
 # Tabs get imported only when enabled in config.toml
 
 
@@ -31,32 +57,9 @@ from printer_utils import (
     # get_label_type
 )
 
-# Load configuration directly from config.toml
-def _load_config():
-    """Load config.toml from the workspace root."""
-    config_path = Path(__file__).parent / "config.toml"
-    try:
-        with open(config_path, "rb") as f:
-            return tomllib.load(f)
-    except FileNotFoundError:
-        st.error(f"config.toml not found at {config_path}")
-        return {}
-    except Exception as e:
-        st.error(f"Error loading config.toml: {e}")
-        return {}
-
-_CONFIG = _load_config()
-_app_config = _CONFIG.get("app", {})
-_ui_config = _CONFIG.get("ui", {})
-_tabs_config = _CONFIG.get("tabs", {})
-
-APP_TITLE = _app_config.get("title", "STICKER FACTORY")
-PRIVACY_MODE = _app_config.get("privacy_mode", True)
-HISTORY_LIMIT = _ui_config.get("history_limit", 15)
-
 def get_enabled_tabs():
     """Return list of enabled tab names, excluding History if privacy_mode is true."""
-    enabled = _tabs_config.get("enabled", [
+    enabled = TABS_CONFIG.get("enabled", [
         "Sticker",
         "Sticker Pro",
         "Label",
