@@ -178,36 +178,51 @@ st.title(f":rainbow[**{APP_TITLE}**]")
 st.subheader(":printer: hard copies of images and text")
 
 
+
+st.sidebar.title("Settings")
+
 printers = find_and_parse_printer()
 
 # check printer statuses 
-printer_names=[]
+available_printers = []
 for p in printers:
-    logger.debug(f"\tPrinter: {p['model']}, Status: {p['status']}")
+    logger.debug(f"\tPrinter: {p['name']}, Status: {p['status']}")
     if p['status'] == 'Waiting to receive':
-        printer_names.append(p['model'])
+        if p['label_type'] != 'unknown':
+            available_printers.append(p['name'])
 
-printer = st.sidebar.radio("**Select Printer**", printer_names)
-selected_printer = next((p for p in printers if p["model"] == printer), None)
+st.sidebar.subheader("Printer Selection")
+printer = st.sidebar.radio("**Available Printer**", available_printers)
+selected_printer = next((p for p in printers if p["name"] == printer), None)
 
 if not selected_printer:
     st.error("❌ No printer selected or detected! Please check your printer connection and configuration. You may refresh the page to retry detection.")
+    
+    st.sidebar.subheader("Detected Printers")
+    for p in printers:
+        st.sidebar.markdown(f"**{p['name']}**\n- Serial Number: *{p['serial_number']}*\n- Label Size: *{p['label_size']}*\n- Status:  *{p['status']}*")
+
+    st.sidebar.subheader("Printer Selection")
+
     #st.stop()   
 
 else:
-    st.sidebar.markdown(f"**Printer Model:** {selected_printer['model']}")
-    st.sidebar.markdown(f"**Serial Number:** {selected_printer['serial_number']}")
-    st.sidebar.markdown(f"**Label Size:** {selected_printer['label_size']}")
-    st.sidebar.markdown(f"**Status:** {selected_printer['status']}")
+    # st.sidebar.markdown(f"- *Serial Number:* {selected_printer['serial_number']}\n- *Label Size:* {selected_printer['label_size']}\n - *Status:* {selected_printer['status']}")
     label_type = selected_printer['label_type']
     label_width = selected_printer['label_width']
+
+    st.sidebar.subheader("Detected Printers")
+    for p in printers:
+        st.sidebar.markdown(f"**{p['name']}**\n- Serial Number: *{p['serial_number']}*\n- Label Size: *{p['label_size']}*\n- Status:  *{p['status']}*")
+
+
 
     # Get enabled tabs from configuration
     enabled_tab_names = get_enabled_tabs()
     logger.debug(f"Enabled tabs: {enabled_tab_names}")
 
     if not enabled_tab_names:
-        st.error("❌ No tabs are enabled! Check tabs/__init__.py ENABLED_TABS configuration")
+        st.error("❌ No tabs are enabled! Check config.toml ENABLED_TABS configuration")
         st.stop()
 
     # Create tabs dynamically
