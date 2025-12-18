@@ -175,11 +175,11 @@ if not os.path.exists(".streamlit/secrets.toml"):
     """)
 
 st.title(f":rainbow[**{APP_TITLE}**]")
-st.subheader(":printer: hard copies of images and text")
+st.subheader(":primary[:printer: hard copies of images and text]")
 
 
 
-st.sidebar.title("Settings")
+st.sidebar.title(":primary[Settings]")
 
 printers = find_and_parse_printer()
 
@@ -191,19 +191,18 @@ for p in printers:
         if p['label_type'] != 'unknown':
             available_printers.append(p['name'])
 
-st.sidebar.subheader("Printer Selection")
+st.sidebar.subheader(":primary[Printer Selection]")
 printer = st.sidebar.radio("**Available Printer**", available_printers)
 selected_printer = next((p for p in printers if p["name"] == printer), None)
 
 if not selected_printer:
-    st.error("❌ No printer selected or detected! Please check your printer connection and configuration. You may refresh the page to retry detection.")
+    st.error("❌ No available printers detected! Check connections, power and paper.")
     
     st.sidebar.subheader("Detected Printers")
     for p in printers:
-        st.sidebar.markdown(f"**{p['name']}**\n- Serial Number: *{p['serial_number']}*\n- Label Size: *{p['label_size']}*\n- Status:  *{p['status']}*")
-
-    st.sidebar.subheader("Printer Selection")
-
+        status_color = "green" if p['status'] == 'Waiting to receive' else "red"
+        label_color = "green" if p['label_type'] != 'unknown' else "red"
+        st.sidebar.markdown(f":primary[**{p['name']}**]\n- Label Size: :{label_color}[{p['label_size']}]\n- Status:  :{status_color}[{p['status']}]")
     #st.stop()   
 
 else:
@@ -211,9 +210,14 @@ else:
     label_type = selected_printer['label_type']
     label_width = selected_printer['label_width']
 
-    st.sidebar.subheader("Detected Printers")
-    for p in printers:
-        st.sidebar.markdown(f"**{p['name']}**\n- Serial Number: *{p['serial_number']}*\n- Label Size: *{p['label_size']}*\n- Status:  *{p['status']}*")
+    st.sidebar.subheader(":primary[Detected Printers]")
+    for p in printers: 
+        status_color = "green" if p['status'] == 'Waiting to receive' else "red"
+        label_color = "green" if p['label_type'] != 'unknown' else "red"
+        if p.name == selected_printer['name']:
+            st.sidebar.markdown(f":green[**{p['name']}**]\n- Label Size: :{label_color}[{p['label_size']}]\n- Status:  :{status_color}[{p['status']}]")
+        else:     
+            st.sidebar.markdown(f":primary[**{p['name']}**]\n- Label Size: :{label_color}[{p['label_size']}]\n- Status:  :{status_color}[{p['status']}]")
 
 
 
