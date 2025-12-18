@@ -54,7 +54,7 @@ def render(preper_image,printer_info, print_image):
             
         # Show image and print button if we have a cat
         if st.session_state.cat_dithered is not None:
-            st.image(st.session_state.cat_dithered, caption="Cat!")
+            st.image(st.session_state.cat_dithered, printer_info=printer_info, caption="Cat!")
             if st.button("Print Cat", key="print_cat"):
                 print_image(st.session_state.cat_image, printer_info, dither=True)
                 st.success("Cat sent to printer!")

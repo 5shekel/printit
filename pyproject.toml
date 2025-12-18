@@ -1,0 +1,15 @@
+[project]
+name = "printit"
+version = "0.1.0"
+description = "Brother QL label printer web interface with Streamlit"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "streamlit>=1.26.0",
+    "pillow>=10.0.0",
+    "brother-ql-inventree @ git+https://github.com/matmair/brother_ql-inventree@master",
+    "pyusb>=1.2.1",
+    "qrcode>=7.4.2",
+    "requests>=2.31.0",
+    "pymupdf>=1.23.0",
+]
