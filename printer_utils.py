@@ -120,17 +120,28 @@ def get_printer_status(printer):
     printer['label_height'] = 0
     try:
         cmd = f"brother_ql -b pyusb --model {printer['model']} -p {printer['identifier']} status"
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        logger.debug(f"Running status command: {cmd}")
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=5)
+        
+        # Log the raw output for debugging
+        if result.stdout:
+            logger.debug(f"Status command stdout:\n{result.stdout}")
+        if result.stderr:
+            logger.warning(f"Status command stderr:\n{result.stderr}")
+        if result.returncode != 0:
+            logger.warning(f"Status command returned non-zero exit code: {result.returncode}")
+            
         for line in result.stdout.splitlines():
             if "Phase:" in line:
                 printer['status'] = line.split("Phase:")[1].strip()
+                logger.debug(f"Detected status: {printer['status']}")
             if "Media size:" in line:
                 printer['label_size'] = line.split("Media size:")[1].strip()
                 size_str = line.split("Media size:")[1].strip().split('x')[0].strip()
                 try:
                     media_width_mm = int(size_str)
                     label_sizes = {
-                        12: "12", 29: "29", 38: "38", 50: "50", 54: "54", 
+                        12: "12", 29: "29", 38: "38", 50: "50", 54: "54",
                         62: "62", 102: "102", 103: "103", 104: "104"
                     }
                     if media_width_mm in label_sizes:
@@ -138,12 +149,15 @@ def get_printer_status(printer):
                         printer['label_type'] = label_type
                         printer['label_width'] = get_label_width(label_type)
                         printer['label_height'] = None
+                        logger.debug(f"Detected label type: {label_type} from width: {media_width_mm}mm")
                 except Exception as e:
                     logger.warning(f"Exception parsing media width: {str(e)}")
         logger.info(f"Printer {printer['name']}: label type: {printer['label_type']}, status: {printer['status']}")
 
+    except subprocess.TimeoutExpired:
+        logger.error(f"Timeout getting status for printer {printer['name']} - USB might be busy")
+        printer['status'] = "timeout"
     except Exception as e:
-        pass
         logger.warning(f"Error getting status for printer {printer['name']}: {str(e)}")
         printer['status'] = str(e)
 

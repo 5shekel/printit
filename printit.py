@@ -168,17 +168,58 @@ st.title(f":rainbow[**{APP_TITLE}**]")
 st.subheader(":primary[:printer: hard copies of images and text]")
 
 
+# ============================================================================
+# PRINTER DETECTION & CACHING
+# ============================================================================
+
+def get_cached_printers():
+    """Get printers, caching them in session state to avoid re-querying while busy."""
+    # Initialize session state for printers if not exists
+    if "cached_printers" not in st.session_state:
+        st.session_state.cached_printers = []
+        st.session_state.last_printer_check = 0
+
+    current_time = time.time()
+    # Re-check every 30 seconds, or if we have no printers
+    if current_time - st.session_state.last_printer_check > 30 or not st.session_state.cached_printers:
+        logger.info("Refreshing printer list...")
+        new_printers = find_and_parse_printer()
+        
+        # If we found printers, update the cache
+        # If we found NO printers but we HAD some, maybe they are just busy?
+        # We only overwrite if we actually found something, or if it's been a long time
+        if new_printers:
+            st.session_state.cached_printers = new_printers
+            st.session_state.last_printer_check = current_time
+        elif not st.session_state.cached_printers:
+            # Truly no printers found and none cached
+            st.session_state.cached_printers = []
+            st.session_state.last_printer_check = current_time
+        else:
+            logger.warning("No printers found during refresh, keeping cached printers (they might be busy)")
+            
+    return st.session_state.cached_printers
+
 st.sidebar.title(":primary[Settings]")
 
-printers = find_and_parse_printer()
+printers = get_cached_printers()
 
 # check printer statuses 
 available_printers = []
+logger.info(f"Found {len(printers)} printer(s) total")
 for p in printers:
-    logger.debug(f"\tPrinter: {p['name']}, Status: {p['status']}")
-    if p['status'] == 'Waiting to receive':
+    logger.info(f"Checking printer: {p['name']}, Status: '{p['status']}', Label Type: '{p['label_type']}'")
+    # If status is unknown but it's a cached printer, we might want to allow it if it was previously working
+    if p['status'] == 'Waiting to receive' or (p['status'] == 'unknown' and p['label_type'] != 'unknown'):
         if p['label_type'] != 'unknown':
             available_printers.append(p['name'])
+            logger.info(f"✓ Printer {p['name']} is available")
+        else:
+            logger.warning(f"✗ Printer {p['name']} excluded: label_type is 'unknown'")
+    else:
+        logger.warning(f"✗ Printer {p['name']} excluded: status is '{p['status']}' (expected 'Waiting to receive')")
+
+logger.info(f"Total available printers: {len(available_printers)}")
 
 st.sidebar.subheader(":primary[Printer Selection]")
 printer = st.sidebar.radio("**Available Printer**", available_printers)
