@@ -45,10 +45,6 @@ def render(preper_image,printer_info, print_image):
                 st.session_state.dog_dithered = dithered_image
                 
             except Exception as e:
-<<<<<<< HEAD
-                logger.error(f"Error fetching dog: {str(e)}")
-=======
->>>>>>> 5b60025bd21e43c1f3a74ce0b8a81298906977de
                 st.error(f"Error fetching dog: {str(e)}")
             
         # Show image and print button if we have a dog
