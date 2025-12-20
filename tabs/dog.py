@@ -1,13 +1,19 @@
 """Cat tab content."""
 
+<<<<<<< HEAD
 import logging
+=======
+>>>>>>> 5b60025bd21e43c1f3a74ce0b8a81298906977de
 import streamlit as st
 import requests
 from io import BytesIO
 from PIL import Image
+<<<<<<< HEAD
 import os
 
 logger = logging.getLogger("sticker_factory.tabs.dog")
+=======
+>>>>>>> 5b60025bd21e43c1f3a74ce0b8a81298906977de
 
 
 def render(preper_image,printer_info, print_image):
@@ -39,7 +45,7 @@ def render(preper_image,printer_info, print_image):
                 response.raise_for_status()
                 image_url = response.json()[0]["url"]
                 
-                logger.info(f"Fetched dog image URL: {image_url}")
+                print(f"Fetched cat image URL: {image_url}")
                 # Download and process image
                 img = Image.open(BytesIO(requests.get(image_url).content)).convert('RGB')
                 grayscale_image, dithered_image = preper_image(img, label_width=printer_info['label_width'])
@@ -49,7 +55,10 @@ def render(preper_image,printer_info, print_image):
                 st.session_state.dog_dithered = dithered_image
                 
             except Exception as e:
+<<<<<<< HEAD
                 logger.error(f"Error fetching dog: {str(e)}")
+=======
+>>>>>>> 5b60025bd21e43c1f3a74ce0b8a81298906977de
                 st.error(f"Error fetching dog: {str(e)}")
             
         # Show image and print button if we have a dog

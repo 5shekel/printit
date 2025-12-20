@@ -39,7 +39,7 @@ def render(preper_image,printer_info, print_image):
                 response.raise_for_status()
                 image_url = response.json()[0]["url"]
                 
-                logger.info(f"Fetched cat image URL: {image_url}")
+                print(f"Fetched cat image URL: {image_url}")
                 # Download and process image
                 img = Image.open(BytesIO(requests.get(image_url).content)).convert('RGB')
                 grayscale_image, dithered_image = preper_image(img, label_width=printer_info['label_width'])
