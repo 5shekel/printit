@@ -39,6 +39,7 @@ def get_enabled_tabs():
         "Text2image",
         "Webcam",
         "Cat",
+        "Dog",
         "History",
         "FAQ",
     ])

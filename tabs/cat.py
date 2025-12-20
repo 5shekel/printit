@@ -17,22 +17,25 @@ def render(preper_image,printer_info, print_image):
         st.session_state.cat_dithered = None
     
     # Check if Cat API key exists and is valid
-    cat_api_key = st.secrets.get("cat_api_key", "")
+    # cat_api_key = st.secrets.get("cat_api_key", "")
     
-    if not cat_api_key or cat_api_key == "ask me":
-        st.warning("⚠️ Cat API key is not configured")
-        st.info("Add your cat_api_key to .streamlit/secrets.toml")
-    else:
+    # if not cat_api_key or cat_api_key == "ask me":
+    #     st.warning("⚠️ Cat API key is not configured")
+    #     st.info("Add your cat_api_key to .streamlit/secrets.toml")
+    if True:
         if st.button("Fetch cat"):
             try:
                 # Get cat image URL
                 response = requests.get(
                     "https://api.thecatapi.com/v1/images/search",
-                    headers={"x-api-key": cat_api_key}
+                    # headers={
+                    #     "x-api-key": cat_api_key
+                    #     }
                 )
                 response.raise_for_status()
                 image_url = response.json()[0]["url"]
-
+                
+                print(f"Fetched cat image URL: {image_url}")
                 # Download and process image
                 img = Image.open(BytesIO(requests.get(image_url).content)).convert('RGB')
                 grayscale_image, dithered_image = preper_image(img, label_width=printer_info['label_width'])
@@ -43,7 +46,7 @@ def render(preper_image,printer_info, print_image):
                 
             except Exception as e:
                 st.error(f"Error fetching cat: {str(e)}")
-        
+            
         # Show image and print button if we have a cat
         if st.session_state.cat_dithered is not None:
             st.image(st.session_state.cat_dithered, printer_info=printer_info, caption="Cat!")
