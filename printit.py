@@ -54,8 +54,12 @@ def get_enabled_tabs():
     ])
     
     # Filter out History if privacy_mode is enabled
-    if PRIVACY_MODE and "History" in enabled:
-        enabled = [tab for tab in enabled if tab != "History"]
+    if PRIVACY_MODE:
+        logger.info("Privacy mode is ENABLED, filtering out History tab")
+        if "History" in enabled:
+            enabled = [tab for tab in enabled if tab != "History"]
+    else:
+        logger.info("Privacy mode is DISABLED, History tab should be visible")
     return enabled
 
 
