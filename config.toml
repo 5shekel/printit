@@ -15,6 +15,12 @@ queue_view = true
 # URL for Stable Diffusion API endpoint
 url = "http://localhost:7860"
 
+[logging]
+file = false
+file_level = "WARNING"
+stdout = true
+stdout_level = "INFO"
+
 [tabs]
 # Enable or disable tabs by setting them to true or false
 # Order in this list determines tab order in the app
@@ -24,8 +30,8 @@ enabled = [
     "Sticker Pro",
     "Text2image",
     "Webcam",
-    "Cat",
     "Dog",
+    "Cat",
     "History",
     "FAQ",
 ]

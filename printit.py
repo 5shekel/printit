@@ -5,13 +5,20 @@ import re
 import time
 import hashlib
 import logging
-import tomllib
 from pathlib import Path
 from brother_ql import labels
 
 # Initialize logging configuration (must be done first!)
 import logging_config
 logger = logging.getLogger("sticker_factory.printit")
+
+# Import centralized config (loads once at startup)
+from config_manager import (
+    APP_TITLE,
+    PRIVACY_MODE,
+    HISTORY_LIMIT,
+    TABS_CONFIG,
+)
 
 # Tabs get imported only when enabled in config.toml
 
@@ -31,35 +38,13 @@ from printer_utils import (
     # get_label_type
 )
 
-# Load configuration directly from config.toml
-def _load_config():
-    """Load config.toml from the workspace root."""
-    config_path = Path(__file__).parent / "config.toml"
-    try:
-        with open(config_path, "rb") as f:
-            return tomllib.load(f)
-    except FileNotFoundError:
-        st.error(f"config.toml not found at {config_path}")
-        return {}
-    except Exception as e:
-        st.error(f"Error loading config.toml: {e}")
-        return {}
-
-_CONFIG = _load_config()
-_app_config = _CONFIG.get("app", {})
-_ui_config = _CONFIG.get("ui", {})
-_tabs_config = _CONFIG.get("tabs", {})
-
-APP_TITLE = _app_config.get("title", "STICKER FACTORY")
-PRIVACY_MODE = _app_config.get("privacy_mode", True)
-HISTORY_LIMIT = _ui_config.get("history_limit", 15)
-
 def get_enabled_tabs():
-    """Return list of enabled tab names, excluding History if privacy_mode is true."""
-    enabled = _tabs_config.get("enabled", [
+    """Return list of enabled tab names from config, excluding History if privacy_mode is true."""
+    # Get the enabled tabs list directly from config (preserves order)
+    enabled = TABS_CONFIG.get("enabled", [
+        "Label",
         "Sticker",
         "Sticker Pro",
-        "Label",
         "Text2image",
         "Webcam",
         "Cat",
@@ -67,6 +52,7 @@ def get_enabled_tabs():
         "History",
         "FAQ",
     ])
+    
     # Filter out History if privacy_mode is enabled
     if PRIVACY_MODE and "History" in enabled:
         enabled = [tab for tab in enabled if tab != "History"]
@@ -175,39 +161,57 @@ if not os.path.exists(".streamlit/secrets.toml"):
     """)
 
 st.title(f":rainbow[**{APP_TITLE}**]")
-st.subheader(":printer: hard copies of images and text")
+st.subheader(":primary[:printer: hard copies of images and text]")
 
+
+st.sidebar.title(":primary[Settings]")
 
 printers = find_and_parse_printer()
 
 # check printer statuses 
-printer_names=[]
+available_printers = []
 for p in printers:
-    logger.debug(f"\tPrinter: {p['model']}, Status: {p['status']}")
+    logger.debug(f"\tPrinter: {p['name']}, Status: {p['status']}")
     if p['status'] == 'Waiting to receive':
-        printer_names.append(p['model'])
+        if p['label_type'] != 'unknown':
+            available_printers.append(p['name'])
 
-printer = st.sidebar.radio("**Select Printer**", printer_names)
-selected_printer = next((p for p in printers if p["model"] == printer), None)
+st.sidebar.subheader(":primary[Printer Selection]")
+printer = st.sidebar.radio("**Available Printer**", available_printers)
+selected_printer = next((p for p in printers if p["name"] == printer), None)
 
 if not selected_printer:
-    st.error("❌ No printer selected or detected! Please check your printer connection and configuration. You may refresh the page to retry detection.")
+    st.error("❌ No available printers detected! Check connections, power and paper.")
+    
+    st.sidebar.subheader("Detected Printers")
+    for p in printers:
+        status_color = "green" if p['status'] == 'Waiting to receive' else "red"
+        label_color = "green" if p['label_type'] != 'unknown' else "red"
+        st.sidebar.markdown(f":primary[**{p['name']}**]\n- Label Size: :{label_color}[{p['label_size']}]\n- Status:  :{status_color}[{p['status']}]")
     #st.stop()   
 
 else:
-    st.sidebar.markdown(f"**Printer Model:** {selected_printer['model']}")
-    st.sidebar.markdown(f"**Serial Number:** {selected_printer['serial_number']}")
-    st.sidebar.markdown(f"**Label Size:** {selected_printer['label_size']}")
-    st.sidebar.markdown(f"**Status:** {selected_printer['status']}")
+    # st.sidebar.markdown(f"- *Serial Number:* {selected_printer['serial_number']}\n- *Label Size:* {selected_printer['label_size']}\n - *Status:* {selected_printer['status']}")
     label_type = selected_printer['label_type']
     label_width = selected_printer['label_width']
+
+    st.sidebar.subheader(":primary[Detected Printers]")
+    for p in printers: 
+        status_color = "green" if p['status'] == 'Waiting to receive' else "red"
+        label_color = "green" if p['label_type'] != 'unknown' else "red"
+        if p.name == selected_printer['name']:
+            st.sidebar.markdown(f":green[**{p['name']}**]\n- Label Size: :{label_color}[{p['label_size']}]\n- Status:  :{status_color}[{p['status']}]")
+        else:     
+            st.sidebar.markdown(f":primary[**{p['name']}**]\n- Label Size: :{label_color}[{p['label_size']}]\n- Status:  :{status_color}[{p['status']}]")
+
+
 
     # Get enabled tabs from configuration
     enabled_tab_names = get_enabled_tabs()
     logger.debug(f"Enabled tabs: {enabled_tab_names}")
 
     if not enabled_tab_names:
-        st.error("❌ No tabs are enabled! Check tabs/__init__.py ENABLED_TABS configuration")
+        st.error("❌ No tabs are enabled! Check config.toml ENABLED_TABS configuration")
         st.stop()
 
     # Create tabs dynamically

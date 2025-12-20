@@ -4,7 +4,6 @@ import logging
 import subprocess
 import tempfile
 import time
-import tomllib
 import os
 from pathlib import Path
 from brother_ql.models import ModelsManager
@@ -18,21 +17,9 @@ from dataclasses import dataclass
 
 import streamlit as st
 from job_queue import print_queue
+from config_manager import PRIVACY_MODE
 
 logger = logging.getLogger("sticker_factory.printer_utils")
-
-# Load configuration directly from config.toml
-def _load_config():
-    """Load config.toml from the workspace root."""
-    config_path = Path(__file__).parent / "config.toml"
-    try:
-        with open(config_path, "rb") as f:
-            return tomllib.load(f)
-    except (FileNotFoundError, Exception):
-        return {}
-
-_CONFIG = _load_config()
-PRIVACY_MODE = _CONFIG.get("app", {}).get("privacy_mode", True)
 
 def safe_filename(text):
     epoch_time = int(time.time())
@@ -113,9 +100,10 @@ def find_and_parse_printer():
                     product_id=product_id,
                     serial_number=serial_number,
                 )
-                found_printers.append(printer_info)            
+
+                found_printers.append(printer_info)   
+                printer_info['name'] = f"{printer_info['model']} - {printer_info['serial_number'][-4:]}"
                 get_printer_status(printer_info)
-                printer_info['name'] = f"{printer_info['model']} - H{serial_number.split('H')[-1]} - {printer_info['label_size']}"
                 logger.debug(f"Added printer: {printer_info}")
 
         except Exception as e:
@@ -125,6 +113,11 @@ def find_and_parse_printer():
 
 
 def get_printer_status(printer):
+    printer['status'] = "unknown"
+    printer['label_type'] = "unknown"
+    printer['label_size'] = "unknown"
+    printer['label_width'] = 0
+    printer['label_height'] = 0
     try:
         cmd = f"brother_ql -b pyusb --model {printer['model']} -p {printer['identifier']} status"
         result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
@@ -146,16 +139,13 @@ def get_printer_status(printer):
                         printer['label_width'] = get_label_width(label_type)
                         printer['label_height'] = None
                 except Exception as e:
-                    logger.error(f"Exception parsing media width: {str(e)}")
-        logger.info(f"Printer {printer['model']}: label type: {label_type}, status: {printer['status']}")
+                    logger.warning(f"Exception parsing media width: {str(e)}")
+        logger.info(f"Printer {printer['name']}: label type: {printer['label_type']}, status: {printer['status']}")
 
     except Exception as e:
-        logger.error(f"Error getting status for printer {printer['model']}: {str(e)}")
+        pass
+        logger.warning(f"Error getting status for printer {printer['name']}: {str(e)}")
         printer['status'] = str(e)
-        printer['label_type'] = "unknown"
-        printer['label_size'] = "unknown"
-        printer['label_width'] = 0
-        printer['label_height'] = 0
 
 
 def get_label_width(label_type):

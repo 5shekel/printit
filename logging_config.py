@@ -2,8 +2,9 @@
 
 import logging
 import logging.handlers
-import os
 from pathlib import Path
+
+from config_manager import ENABLE_FILE_LOGGING, FILE_LOG_LEVEL, ENABLE_STDOUT, STDOUT_LOG_LEVEL
 
 
 # ANSI color codes for terminal output
@@ -28,7 +29,6 @@ class ColoredFormatter(logging.Formatter):
         record.levelname = f"{color}{self.BOLD}{levelname}{self.RESET}"
         return super().format(record)
 
-
 # Create logs directory if it doesn't exist
 logs_dir = Path(__file__).parent / "logs"
 logs_dir.mkdir(exist_ok=True)
@@ -50,22 +50,26 @@ colored_formatter = ColoredFormatter(
     "%(levelname)s - %(message)s"
 )
 
-# Console handler (INFO level and above) with colors
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.INFO)
-console_handler.setFormatter(colored_formatter)
-logger.addHandler(console_handler)
 
-# File handler (DEBUG level and above) - rotating file (no colors)
-log_file = logs_dir / "sticker_factory.log"
-file_handler = logging.handlers.RotatingFileHandler(
-    log_file,
-    maxBytes=10485760,  # 10MB
-    backupCount=5
-)
-file_handler.setLevel(logging.DEBUG)
-file_handler.setFormatter(detailed_formatter)
-logger.addHandler(file_handler)
+
+# Console handler (if enabled in config)
+if ENABLE_STDOUT:
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(getattr(logging, STDOUT_LOG_LEVEL.upper(), logging.INFO))
+    console_handler.setFormatter(colored_formatter)
+    logger.addHandler(console_handler)
+
+# File handler (if enabled in config)
+if ENABLE_FILE_LOGGING:
+    log_file = logs_dir / "sticker_factory.log"
+    file_handler = logging.handlers.RotatingFileHandler(
+        log_file,
+        maxBytes=10000000,  # 10MB
+        backupCount=5
+    )
+    file_handler.setLevel(getattr(logging, FILE_LOG_LEVEL.upper(), logging.WARNING))
+    file_handler.setFormatter(detailed_formatter)
+    logger.addHandler(file_handler)
 
 # Prevent propagation to root logger
 logger.propagate = False
@@ -76,3 +80,4 @@ def get_logger(module_name=None):
     if module_name:
         return logging.getLogger(f"sticker_factory.{module_name}")
     return logger
+
