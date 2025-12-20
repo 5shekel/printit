@@ -1,19 +1,9 @@
 """Cat tab content."""
 
-<<<<<<< HEAD
-import logging
-=======
->>>>>>> 5b60025bd21e43c1f3a74ce0b8a81298906977de
 import streamlit as st
 import requests
 from io import BytesIO
 from PIL import Image
-<<<<<<< HEAD
-import os
-
-logger = logging.getLogger("sticker_factory.tabs.dog")
-=======
->>>>>>> 5b60025bd21e43c1f3a74ce0b8a81298906977de
 
 
 def render(preper_image,printer_info, print_image):
