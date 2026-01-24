@@ -100,3 +100,179 @@ def img_concat_v(im1, im2, image_width):
     im2 = im2.resize((image_width, image_width))
     dst.paste(im2, (0, im1.height))
     return dst
+
+
+def find_figure_bounds(image, background_threshold=240):
+    """Find bounding box of main figure in image.
+    
+    Args:
+        image: PIL Image
+        background_threshold: RGB value threshold for considering pixel as background (0-255)
+    
+    Returns:
+        Tuple (min_x, min_y, max_x, max_y) or None if no figure found
+    """
+    if image.mode == 'RGBA':
+        # Use alpha channel for transparent images
+        alpha = image.getchannel('A')
+        width, height = image.size
+        
+        min_x, min_y = width, height
+        max_x, max_y = 0, 0
+        
+        for y in range(height):
+            for x in range(width):
+                if alpha.getpixel((x, y)) > 0:  # Non-transparent pixel
+                    min_x = min(min_x, x)
+                    min_y = min(min_y, y)
+                    max_x = max(max_x, x)
+                    max_y = max(max_y, y)
+        
+        if min_x < max_x and min_y < max_y:
+            return (min_x, min_y, max_x, max_y)
+    
+    # For RGB images, detect non-background pixels
+    if image.mode != 'RGB':
+        image = image.convert('RGB')
+    
+    width, height = image.size
+    pixels = image.load()
+    
+    min_x, min_y = width, height
+    max_x, max_y = 0, 0
+    
+    for y in range(height):
+        for x in range(width):
+            r, g, b = pixels[x, y]
+            # Check if pixel is significantly different from white
+            if r < background_threshold or g < background_threshold or b < background_threshold:
+                min_x = min(min_x, x)
+                min_y = min(min_y, y)
+                max_x = max(max_x, x)
+                max_y = max(max_y, y)
+    
+    if min_x < max_x and min_y < max_y:
+        return (min_x, min_y, max_x, max_y)
+    
+    return None
+
+
+def draw_dashed_line(draw, start, end, dash_length=10, gap_length=5, width=2, fill=(0, 0, 0)):
+    """Draw dashed line between two points.
+    
+    Args:
+        draw: PIL ImageDraw object
+        start: (x1, y1) start point
+        end: (x2, y2) end point
+        dash_length: Length of each dash in pixels
+        gap_length: Length of gap between dashes in pixels
+        width: Line width
+        fill: Line color
+    """
+    import math
+    
+    x1, y1 = start
+    x2, y2 = end
+    dx = x2 - x1
+    dy = y2 - y1
+    distance = math.sqrt(dx**2 + dy**2)
+    
+    if distance == 0:
+        return
+    
+    # Normalize direction
+    dx /= distance
+    dy /= distance
+    
+    # Draw dashes
+    step = dash_length + gap_length
+    for d in range(0, int(distance), step):
+        start_d = d
+        end_d = min(d + dash_length, distance)
+        
+        x_start = x1 + dx * start_d
+        y_start = y1 + dy * start_d
+        x_end = x1 + dx * end_d
+        y_end = y1 + dy * end_d
+        
+        draw.line([(x_start, y_start), (x_end, y_end)], fill=fill, width=width)
+
+
+def add_cutting_guide(image, guide_type="dashed", spacing=15, margin=5, background_threshold=240):
+    """Add cutting guide around the main figure in image.
+    
+    Args:
+        image: PIL Image to add guides to
+        guide_type: "dashed", "dotted", "scissors_icon", "perforated"
+        spacing: Spacing between guide marks in pixels
+        margin: Distance from figure edge to cut line in pixels
+        background_threshold: RGB threshold for background detection (0-255)
+    
+    Returns:
+        PIL Image with cutting guides added around the figure
+    """
+    from PIL import ImageDraw
+    
+    # Find figure bounds
+    bounds = find_figure_bounds(image, background_threshold)
+    
+    if bounds is None:
+        # If no figure detected, use whole image
+        bounds = (0, 0, image.width, image.height)
+    
+    min_x, min_y, max_x, max_y = bounds
+    
+    # Calculate bounds with margin
+    guide_left = max(0, min_x - margin)
+    guide_top = max(0, min_y - margin)
+    guide_right = min(image.width, max_x + margin)
+    guide_bottom = min(image.height, max_y + margin)
+    
+    # Create new image with white background (same size as original)
+    guide_image = Image.new("RGB", image.size, (255, 255, 255))
+    guide_image.paste(image)
+    
+    draw = ImageDraw.Draw(guide_image)
+    
+    if guide_type == "dashed":
+        # Draw dashed rectangle around figure
+        dash_length = 10
+        gap_length = 5
+        
+        # Top edge
+        draw_dashed_line(draw, 
+                        (guide_left, guide_top), 
+                        (guide_right, guide_top),
+                        dash_length, gap_length, 2, (0, 0, 0))
+        
+        # Bottom edge
+        draw_dashed_line(draw,
+                        (guide_left, guide_bottom),
+                        (guide_right, guide_bottom),
+                        dash_length, gap_length, 2, (0, 0, 0))
+        
+        # Left edge
+        draw_dashed_line(draw,
+                        (guide_left, guide_top),
+                        (guide_left, guide_bottom),
+                        dash_length, gap_length, 2, (0, 0, 0))
+        
+        # Right edge
+        draw_dashed_line(draw,
+                        (guide_right, guide_top),
+                        (guide_right, guide_bottom),
+                        dash_length, gap_length, 2, (0, 0, 0))
+    
+    elif guide_type == "dotted":
+        # Draw dotted rectangle
+        for x in range(guide_left, guide_right, spacing):
+            if x <= guide_right:
+                draw.ellipse([x-2, guide_top-2, x+2, guide_top+2], fill=(0, 0, 0))
+                draw.ellipse([x-2, guide_bottom-2, x+2, guide_bottom+2], fill=(0, 0, 0))
+        
+        for y in range(guide_top, guide_bottom, spacing):
+            if y <= guide_bottom:
+                draw.ellipse([guide_left-2, y-2, guide_left+2, y+2], fill=(0, 0, 0))
+                draw.ellipse([guide_right-2, y-2, guide_right+2, y+2], fill=(0, 0, 0))
+    
+    return guide_image
