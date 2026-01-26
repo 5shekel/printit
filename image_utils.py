@@ -276,3 +276,213 @@ def add_cutting_guide(image, guide_type="dashed", spacing=15, margin=5, backgrou
                 draw.ellipse([guide_right-2, y-2, guide_right+2, y+2], fill=(0, 0, 0))
     
     return guide_image
+
+
+def cut_image_width(image, cut_position):
+    """Cut an image at a specific width position.
+    
+    Args:
+        image: PIL Image to cut
+        cut_position: Pixel position (1 to image.width-1) where to cut
+        
+    Returns:
+        Tuple of (left_image, right_image) - two images split at cut_position
+    """
+    if cut_position < 1 or cut_position >= image.width:
+        raise ValueError(f"cut_position must be between 1 and {image.width-1}")
+    
+    # Crop left part (0 to cut_position-1)
+    left_box = (0, 0, cut_position, image.height)
+    left_image = image.crop(left_box)
+    
+    # Crop right part (cut_position to end)
+    right_box = (cut_position, 0, image.width, image.height)
+    right_image = image.crop(right_box)
+    
+    return left_image, right_image
+
+
+def add_width_cut_indicator(image, cut_position, line_width=3, color=(255, 0, 0)):
+    """Add a visual indicator showing where the image will be cut.
+    
+    Args:
+        image: PIL Image to add indicator to
+        cut_position: Pixel position where cut will occur
+        line_width: Width of the indicator line
+        color: Color of the indicator line (RGB tuple)
+        
+    Returns:
+        PIL Image with cut indicator added
+    """
+    from PIL import ImageDraw
+    
+    # Create a copy to draw on
+    indicator_image = image.copy()
+    if indicator_image.mode != 'RGB':
+        indicator_image = indicator_image.convert('RGB')
+    
+    draw = ImageDraw.Draw(indicator_image)
+    
+    # Draw vertical line at cut position
+    draw.line([(cut_position, 0), (cut_position, image.height)], 
+              fill=color, width=line_width)
+    
+    # Add arrow indicators
+    arrow_size = 10
+    # Top arrow
+    draw.polygon([
+        (cut_position, arrow_size),
+        (cut_position - arrow_size, 0),
+        (cut_position + arrow_size, 0)
+    ], fill=color)
+    
+    # Bottom arrow
+    draw.polygon([
+        (cut_position, image.height - arrow_size),
+        (cut_position - arrow_size, image.height),
+        (cut_position + arrow_size, image.height)
+    ], fill=color)
+    
+    # Add text label
+    try:
+        from PIL import ImageFont
+        font = ImageFont.load_default()
+        text = f"Cut at {cut_position}px"
+        text_bbox = draw.textbbox((0, 0), text, font=font)
+        text_width = text_bbox[2] - text_bbox[0]
+        text_height = text_bbox[3] - text_bbox[1]
+        
+        # Position text near the cut line
+        text_x = cut_position - text_width // 2
+        text_y = image.height // 2 - text_height // 2
+        
+        # Draw text with background for visibility
+        draw.rectangle([text_x-2, text_y-2, text_x+text_width+2, text_y+text_height+2], 
+                      fill=(255, 255, 255))
+        draw.text((text_x, text_y), text, fill=color, font=font)
+    except:
+        # If font loading fails, just draw without text
+        pass
+    
+    return indicator_image
+
+
+def cut_image_into_strips(image, num_strips):
+    """Cut an image into N equal-width strips.
+    
+    Args:
+        image: PIL Image to cut
+        num_strips: Number of equal-width strips to create (1 to reasonable max)
+        
+    Returns:
+        List of PIL Images - the strips from left to right
+    """
+    if num_strips < 1:
+        raise ValueError(f"num_strips must be at least 1, got {num_strips}")
+    
+    if num_strips > image.width:
+        raise ValueError(f"num_strips ({num_strips}) cannot exceed image width ({image.width})")
+    
+    image_width = image.width
+    image_height = image.height
+    
+    # Calculate strip width (integer division)
+    strip_width = image_width // num_strips
+    remainder = image_width % num_strips
+    
+    strips = []
+    current_x = 0
+    
+    for i in range(num_strips):
+        # Distribute remainder pixels among first few strips
+        extra_pixel = 1 if i < remainder else 0
+        current_strip_width = strip_width + extra_pixel
+        
+        # Crop strip using same pattern as cut_image_width
+        strip_box = (current_x, 0, current_x + current_strip_width, image_height)
+        strip_image = image.crop(strip_box)
+        strips.append(strip_image)
+        
+        current_x += current_strip_width
+    
+    return strips
+
+
+def add_strip_cut_indicators(image, num_strips, line_width=2, color=(255, 0, 0)):
+    """Add visual indicators showing where the image will be cut into strips.
+    
+    Args:
+        image: PIL Image to add indicators to
+        num_strips: Number of equal-width strips
+        line_width: Width of the indicator lines
+        color: Color of the indicator lines (RGB tuple)
+        
+    Returns:
+        PIL Image with strip cut indicators added
+    """
+    from PIL import ImageDraw
+    
+    # Create a copy to draw on
+    indicator_image = image.copy()
+    if indicator_image.mode != 'RGB':
+        indicator_image = indicator_image.convert('RGB')
+    
+    draw = ImageDraw.Draw(indicator_image)
+    
+    image_width = image.width
+    image_height = image.height
+    
+    # Calculate strip width
+    strip_width = image_width // num_strips
+    remainder = image_width % num_strips
+    
+    current_x = 0
+    
+    # Draw cut lines between strips (skip the first line at x=0)
+    for i in range(1, num_strips):
+        # Calculate x position for this cut line
+        extra_pixel = 1 if (i - 1) < remainder else 0
+        current_x += strip_width + extra_pixel
+        
+        # Draw vertical line using same visual style as add_width_cut_indicator
+        draw.line([(current_x, 0), (current_x, image_height)], 
+                  fill=color, width=line_width)
+        
+        # Add arrow indicators (smaller than single cut indicator)
+        arrow_size = 8
+        # Top arrow
+        draw.polygon([
+            (current_x, arrow_size),
+            (current_x - arrow_size, 0),
+            (current_x + arrow_size, 0)
+        ], fill=color)
+        
+        # Bottom arrow
+        draw.polygon([
+            (current_x, image_height - arrow_size),
+            (current_x - arrow_size, image.height),
+            (current_x + arrow_size, image.height)
+        ], fill=color)
+    
+    # Add text label
+    try:
+        from PIL import ImageFont
+        font = ImageFont.load_default()
+        text = f"Cut into {num_strips} equal strips"
+        text_bbox = draw.textbbox((0, 0), text, font=font)
+        text_width = text_bbox[2] - text_bbox[0]
+        text_height = text_bbox[3] - text_bbox[1]
+        
+        # Position text at top center
+        text_x = (image_width - text_width) // 2
+        text_y = 10
+        
+        # Draw text with background for visibility
+        draw.rectangle([text_x-2, text_y-2, text_x+text_width+2, text_y+text_height+2], 
+                      fill=(255, 255, 255))
+        draw.text((text_x, text_y), text, fill=color, font=font)
+    except:
+        # If font loading fails, just draw without text
+        pass
+    
+    return indicator_image

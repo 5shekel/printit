@@ -28,6 +28,7 @@ enabled = [
     "Label",
     "Sticker",
     "Sticker Pro",
+    "Width Cutting Sticker",
     "Text2image",
     "Webcam",
     "Dog",

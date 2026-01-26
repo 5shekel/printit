@@ -336,6 +336,13 @@ else:
                         preper_image=preper_image,
                         printer_info=selected_printer,
                     )
+                elif tab_name == "Width Cutting Sticker":
+                    import tabs.width_cutting_sticker as width_cutting_sticker_module
+                    width_cutting_sticker_module.render(
+                        preper_image=preper_image,
+                        print_image=print_image,
+                        printer_info=selected_printer,
+                    )
                 elif tab_name == "History":
                     import tabs.history as history_module
                     history_module.render(
