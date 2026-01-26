@@ -247,7 +247,7 @@ def render(printer_info, get_fonts, find_url, preper_image, print_image, img_con
             y += text_height + line_spacing
 
         qr = qrcode.QRCode(border=0)
-        qrurl = st.text_input("add a QRcode to your sticker")
+        qrurl = st.text_input("add a QRcode to your sticker", key="label_qr_url_input")
         
         if qrurl:
             qr.add_data(qrurl)

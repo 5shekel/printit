@@ -91,7 +91,7 @@ def render(preper_image, print_image,printer_info):
     )
     
     # Or fetch from URL
-    image_url = st.text_input("Or enter an HTTPS image URL to fetch and print")
+    image_url = st.text_input("Or enter an HTTPS image URL to fetch and print", key="sticker_url_input")
 
     # Process uploaded file or URL
     if uploaded_image is not None:
