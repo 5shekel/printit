@@ -6,3 +6,8 @@ qrcode>=7.4.2
 requests>=2.31.0
 PyMuPDF>=1.23.0
 
+opencv-python
+numpy
+matplotlib
+rembg[cpu]
+
