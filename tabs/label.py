@@ -246,9 +246,17 @@ def render(printer_info, get_fonts, find_url, preper_image, print_image, img_con
             d.text((x, y), line, font=fnt, fill=(0, 0, 0))
             y += text_height + line_spacing
 
+        rotate_text = st.checkbox("Rotate text (print along length)", value=False,
+                                   help="Rotate the text 90° so it prints along the label's length instead of its width")
+
         qr = qrcode.QRCode(border=0)
         qrurl = st.text_input("add a QRcode to your sticker")
-        
+
+        def apply_rotation(image):
+            if rotate_text:
+                return image.rotate(90, expand=True)
+            return image
+
         if qrurl:
             qr.add_data(qrurl)
             qr.make(fit=True)
@@ -256,17 +264,20 @@ def render(printer_info, get_fonts, find_url, preper_image, print_image, img_con
 
             if imgqr and img:
                 imgqr = img_concat_v(img, imgqr,image_width=label_width)
+                imgqr = apply_rotation(imgqr)
                 st.image(imgqr, width='stretch')
                 if st.button("Print sticker+qr", key="print_sticker_qr"):
                     print_image(imgqr)
             elif imgqr and not (img):
+                imgqr = apply_rotation(imgqr)
                 if st.button("Print sticker", key="print_qr_only"):
                     print_image(imgqr)
 
         if text and not (qrurl):
-            st.image(img, width='stretch')
+            display_img = apply_rotation(img)
+            st.image(display_img, width='stretch')
             if st.button("Print sticker", key="print_text_only"):
-                print_image(img,printer_info=printer_info)
+                print_image(display_img, printer_info=printer_info)
                 st.success("sticker sent to printer")
         
         st.markdown("""
