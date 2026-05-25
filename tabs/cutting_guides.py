@@ -3,6 +3,7 @@
 import logging
 import streamlit as st
 import os
+import time
 import tempfile
 from PIL import Image
 import io
@@ -382,8 +383,12 @@ def render(printer_info, preper_image, print_image, apply_threshold):
                 dither_opt = st.checkbox("Dither", value=True, key="outline_dither")
                 rotate_opt = st.checkbox("Rotate 90", key="outline_rotate")
             
+            outline_copies = st.number_input("Copies", min_value=1, max_value=100, value=1, key="outline_copies")
+            
             if st.button("Print Outlined Sticker", use_container_width=True, key="outline_print_btn"):
                 with st.spinner("Sending to printer..."):
                     rotate_val = 90 if rotate_opt else 0
-                    print_image(result_img, printer_info=printer_info, rotate=rotate_val, dither=dither_opt)
+                    for _ in range(outline_copies):
+                        print_image(result_img, printer_info=printer_info, rotate=rotate_val, dither=dither_opt)
+                        time.sleep(0.5)
                     st.success("Sent to printer!")

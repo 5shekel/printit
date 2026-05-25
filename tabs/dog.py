@@ -2,6 +2,7 @@
 
 import streamlit as st
 import requests
+import time
 from io import BytesIO
 from PIL import Image
 
@@ -50,6 +51,9 @@ def render(preper_image,printer_info, print_image):
         # Show image and print button if we have a dog
         if st.session_state.dog_dithered is not None:
             st.image(st.session_state.dog_dithered, caption="Dog!")
+            dog_copies = st.number_input("Copies", min_value=1, max_value=100, value=1, key="dog_copies")
             if st.button("Print Dog", key="print_dog"):
-                print_image(st.session_state.dog_image, printer_info, dither=True)
+                for _ in range(dog_copies):
+                    print_image(st.session_state.dog_image, printer_info, dither=True)
+                    time.sleep(0.5)
                 st.success("Dog sent to printer!")

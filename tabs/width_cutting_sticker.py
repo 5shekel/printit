@@ -3,6 +3,7 @@
 import logging
 import streamlit as st
 import os
+import time
 from PIL import Image
 import io
 
@@ -225,23 +226,23 @@ def render(preper_image, print_image, printer_info):
                                 except Exception as e:
                                     st.error(f"Error printing strip {strip_num}: {str(e)}")
             
+            # Copies for strips
+            wc_copies = st.number_input("Copies", min_value=1, max_value=100, value=1, key="wc_copies_upload")
+            
             # Print all strips button
             if st.button("Print All Strips", key="print_all_strips"):
                 try:
                     rotate_value = 90 if rotate_checkbox else 0
                     dither_value = dither_checkbox
                     
-                    for i, strip_image in enumerate(strips, 1):
-                        print_image(strip_image, printer_info, rotate=rotate_value, dither=dither_value)
-                        st.success(f"Strip {i}/{num_strips} sent to printer!")
-                        
-                        # Small delay between prints (except after last)
-                        if i < num_strips:
-                            import time
-                            time.sleep(2)
+                    for _ in range(wc_copies):
+                        for i, strip_image in enumerate(strips, 1):
+                            print_image(strip_image, printer_info, rotate=rotate_value, dither=dither_value)
+                            st.success(f"Strip {i}/{num_strips} sent to printer!")
+                            time.sleep(0.5)
                     
                     st.balloons()
-                    st.success(f"All {num_strips} strips printed successfully!")
+                    st.success(f"All {num_strips} strips × {wc_copies} copies printed successfully!")
                     
                 except Exception as e:
                     st.error(f"Error printing strips: {str(e)}")
@@ -250,7 +251,9 @@ def render(preper_image, print_image, printer_info):
             if st.button("Print Original (Uncut)", key="print_original_uncut"):
                 rotate_value = 90 if rotate_checkbox else 0
                 dither_value = dither_checkbox
-                print_image(image_to_process, printer_info, rotate=rotate_value, dither=dither_value)
+                for _ in range(wc_copies):
+                    print_image(image_to_process, printer_info, rotate=rotate_value, dither=dither_value)
+                    time.sleep(0.5)
                 st.success("Original (uncut) image sent to printer!")
         
     elif image_url:
@@ -345,23 +348,23 @@ def render(preper_image, print_image, printer_info):
                                 except Exception as e:
                                     st.error(f"Error printing strip {strip_num}: {str(e)}")
             
+            # Copies for URL strips
+            wc_copies_url = st.number_input("Copies", min_value=1, max_value=100, value=1, key="wc_copies_url")
+            
             # Print all strips button
             if st.button("Print All Strips", key="print_all_strips_url"):
                 try:
                     rotate_value = 90 if rotate_checkbox else 0
                     dither_value = dither_checkbox
                     
-                    for i, strip_image in enumerate(strips, 1):
-                        print_image(strip_image, printer_info, rotate=rotate_value, dither=dither_value)
-                        st.success(f"Strip {i}/{num_strips} sent to printer!")
-                        
-                        # Small delay between prints (except after last)
-                        if i < num_strips:
-                            import time
-                            time.sleep(2)
+                    for _ in range(wc_copies_url):
+                        for i, strip_image in enumerate(strips, 1):
+                            print_image(strip_image, printer_info, rotate=rotate_value, dither=dither_value)
+                            st.success(f"Strip {i}/{num_strips} sent to printer!")
+                            time.sleep(0.5)
                     
                     st.balloons()
-                    st.success(f"All {num_strips} strips printed successfully!")
+                    st.success(f"All {num_strips} strips × {wc_copies_url} copies printed successfully!")
                     
                 except Exception as e:
                     st.error(f"Error printing strips: {str(e)}")
@@ -370,5 +373,7 @@ def render(preper_image, print_image, printer_info):
             if st.button("Print Original (Uncut)", key="print_original_uncut_url"):
                 rotate_value = 90 if rotate_checkbox else 0
                 dither_value = dither_checkbox
-                print_image(image_to_process, printer_info, rotate=rotate_value, dither=dither_value)
+                for _ in range(wc_copies_url):
+                    print_image(image_to_process, printer_info, rotate=rotate_value, dither=dither_value)
+                    time.sleep(0.5)
                 st.success("Original (uncut) image sent to printer!")

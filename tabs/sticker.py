@@ -3,6 +3,7 @@
 import logging
 import streamlit as st
 import os
+import time
 from PIL import Image
 import io
 
@@ -70,10 +71,13 @@ def render(preper_image, print_image,printer_info):
                 button_text += "Dithered "
             button_text += "Image"
 
+            sticker_copies = st.number_input("Copies", min_value=1, max_value=100, value=1, key="sticker_copies_history")
             if st.button(button_text, key="print_history"):
                 rotate_value = 90 if rotate_checkbox else 0
                 dither_value = dither_checkbox
-                print_image(image_to_process, rotate=rotate_value, dither=dither_value)
+                for _ in range(sticker_copies):
+                    print_image(image_to_process, rotate=rotate_value, dither=dither_value)
+                    time.sleep(0.5)
                 
             if st.button("Clear Selection"):
                 del st.session_state.selected_image_path
@@ -150,11 +154,13 @@ def render(preper_image, print_image,printer_info):
                 button_text += "Dithered "
             button_text += "Image"
 
-            # Create a single button with dynamic text
+            sticker_copies = st.number_input("Copies", min_value=1, max_value=100, value=1, key="sticker_copies_upload")
             if st.button(button_text, key="sticker_print"):
                 rotate_value = 90 if rotate_checkbox else 0
                 dither_value = dither_checkbox
-                print_image(image_to_process,printer_info, rotate=rotate_value, dither=dither_value)
+                for _ in range(sticker_copies):
+                    print_image(image_to_process, printer_info, rotate=rotate_value, dither=dither_value)
+                    time.sleep(0.5)
 
             # Display image based on checkbox status
             try:
@@ -198,11 +204,13 @@ def render(preper_image, print_image,printer_info):
                 button_text += "Dithered "
             button_text += "Image"
 
-            # Print button
+            sticker_copies_url = st.number_input("Copies", min_value=1, max_value=100, value=1, key="sticker_copies_url")
             if st.button(button_text, key="print_url"):
                 rotate_value = 90 if rotate_checkbox else 0
                 dither_value = dither_checkbox
-                print_image(image_to_process, rotate=rotate_value, dither=dither_value)
+                for _ in range(sticker_copies_url):
+                    print_image(image_to_process, rotate=rotate_value, dither=dither_value)
+                    time.sleep(0.5)
 
             # Display image based on checkbox status
             if dither_checkbox:
