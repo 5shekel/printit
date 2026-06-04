@@ -2,6 +2,7 @@
 
 import streamlit as st
 import os
+import time
 from PIL import Image
 
 
@@ -20,13 +21,18 @@ def render(preper_image,printer_info, print_image):
             st.image(dithered_image, caption="Resized and Dithered Image")
 
             # Print options
+            webcam_copies = st.number_input("Copies", min_value=1, max_value=100, value=1, key="webcam_copies")
             colc, cold = st.columns(2)
             with colc:
                 if st.button("Print rotated Image", key="print_rotated_webcam"):
-                    print_image(grayscale_image, printer_info, rotate=90, dither=True)
+                    for _ in range(webcam_copies):
+                        print_image(grayscale_image, printer_info, rotate=90, dither=True)
+                        time.sleep(0.5)
                     st.balloons()
                     st.success("rotated image sent to printer!")
             with cold:
                 if st.button("Print Image", key="print_webcam"):
-                    print_image(grayscale_image, printer_info, dither=True)
+                    for _ in range(webcam_copies):
+                        print_image(grayscale_image, printer_info, dither=True)
+                        time.sleep(0.5)
                     st.success("image sent to printer!")

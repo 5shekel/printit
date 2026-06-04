@@ -6,6 +6,7 @@ import requests
 import io
 import base64
 import os
+import time
 import tomllib
 from pathlib import Path
 from PIL import Image, PngImagePlugin
@@ -101,14 +102,19 @@ def render(submit_func, generate_image_func, preper_image, print_image, printer_
         with col2:
             st.image(dithered_image, caption="Resized and Dithered Image")
 
+        t2i_copies = st.number_input("Copies", min_value=1, max_value=100, value=1, key="t2i_copies")
         col3, col4 = st.columns(2)
         with col3:
             if st.button("Print Original Image", key="print_original_t2i"):
-                print_image(grayscale_image)
+                for _ in range(t2i_copies):
+                    print_image(grayscale_image)
+                    time.sleep(0.5)
                 st.success("Original image sent to printer!")
         with col4:
             if st.button("Print Dithered Image", key="print_dithered_t2i"):
-                print_image(grayscale_image, dither=True)
+                for _ in range(t2i_copies):
+                    print_image(grayscale_image, dither=True)
+                    time.sleep(0.5)
                 st.success("Dithered image sent to printer!")
 
     st.session_state.last_prompt = prompt

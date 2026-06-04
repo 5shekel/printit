@@ -12,6 +12,7 @@ def render(printer_info, get_fonts, find_url, preper_image, print_image, img_con
     import streamlit as st
     import os
     import qrcode
+    import time
     from PIL import Image, ImageDraw, ImageFont
     
     st.subheader(":printer: a label")
@@ -247,8 +248,11 @@ def render(printer_info, get_fonts, find_url, preper_image, print_image, img_con
             y += text_height + line_spacing
 
         qr = qrcode.QRCode(border=0)
-        qrurl = st.text_input("add a QRcode to your sticker")
+        qrurl = st.text_input("add a QRcode to your sticker", key="label_qr_url_input")
         
+        # Copies selector
+        copies = st.number_input("Copies", min_value=1, max_value=100, value=1, key="label_copies")
+
         if qrurl:
             qr.add_data(qrurl)
             qr.make(fit=True)
@@ -258,15 +262,21 @@ def render(printer_info, get_fonts, find_url, preper_image, print_image, img_con
                 imgqr = img_concat_v(img, imgqr,image_width=label_width)
                 st.image(imgqr, width='stretch')
                 if st.button("Print sticker+qr", key="print_sticker_qr"):
-                    print_image(imgqr)
+                    for _ in range(copies):
+                        print_image(imgqr)
+                        time.sleep(0.5)
             elif imgqr and not (img):
                 if st.button("Print sticker", key="print_qr_only"):
-                    print_image(imgqr)
+                    for _ in range(copies):
+                        print_image(imgqr)
+                        time.sleep(0.5)
 
         if text and not (qrurl):
             st.image(img, width='stretch')
             if st.button("Print sticker", key="print_text_only"):
-                print_image(img,printer_info=printer_info)
+                for _ in range(copies):
+                    print_image(img, printer_info=printer_info)
+                    time.sleep(0.5)
                 st.success("sticker sent to printer")
         
         st.markdown("""

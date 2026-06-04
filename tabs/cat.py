@@ -3,6 +3,7 @@
 import logging
 import streamlit as st
 import requests
+import time
 from io import BytesIO
 from PIL import Image
 import os
@@ -55,6 +56,9 @@ def render(preper_image,printer_info, print_image):
         # Show image and print button if we have a cat
         if st.session_state.cat_dithered is not None:
             st.image(st.session_state.cat_dithered, caption="Cat!")
+            cat_copies = st.number_input("Copies", min_value=1, max_value=100, value=1, key="cat_copies")
             if st.button("Print Cat", key="print_cat"):
-                print_image(st.session_state.cat_image, printer_info, dither=True)
+                for _ in range(cat_copies):
+                    print_image(st.session_state.cat_image, printer_info, dither=True)
+                    time.sleep(0.5)
                 st.success("Cat sent to printer!")

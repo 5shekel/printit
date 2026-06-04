@@ -5,6 +5,7 @@ import streamlit as st
 import requests
 import io
 import os
+import time
 from PIL import Image, ImageOps, ImageDraw, ImageFont
 
 logger = logging.getLogger("sticker_factory.tabs.sticker_pro")
@@ -264,6 +265,8 @@ def render(print_image,printer_info, apply_threshold, add_border, apply_histogra
         if target_width_mm > 0:
             print_button_label += f", Width: {target_width_mm}mm"
         
+        sticker_pro_copies = st.number_input("Copies", min_value=1, max_value=100, value=1, key="sticker_pro_copies")
+
         if st.button(print_button_label, key="sticker_pro_print"):
             rotate = 90 if (rotate_checkbox and not rotate_disabled) else 0
             
@@ -272,8 +275,10 @@ def render(print_image,printer_info, apply_threshold, add_border, apply_histogra
             if meme_checkbox and (meme_top_text or meme_bottom_text):
                 print_display_image = make_meme_text(print_display_image, meme_top_text, meme_bottom_text, meme_font_size, meme_outline_width)
             
-            if print_choice == "Original":
-                print_image(print_display_image, printer_info, rotate=rotate, dither=dither)
-            else:
-                print_image(print_display_image, printer_info, rotate=rotate, dither=False)
+            for _ in range(sticker_pro_copies):
+                if print_choice == "Original":
+                    print_image(print_display_image, printer_info, rotate=rotate, dither=dither)
+                else:
+                    print_image(print_display_image, printer_info, rotate=rotate, dither=False)
+                time.sleep(0.5)
             st.success("Print job sent to printer!")

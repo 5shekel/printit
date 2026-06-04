@@ -336,6 +336,13 @@ else:
                         preper_image=preper_image,
                         printer_info=selected_printer,
                     )
+                elif tab_name == "Width Cutting Sticker":
+                    import tabs.width_cutting_sticker as width_cutting_sticker_module
+                    width_cutting_sticker_module.render(
+                        preper_image=preper_image,
+                        print_image=print_image,
+                        printer_info=selected_printer,
+                    )
                 elif tab_name == "History":
                     import tabs.history as history_module
                     history_module.render(
@@ -346,6 +353,14 @@ else:
                 elif tab_name == "FAQ":
                     import tabs.faq as faq_module
                     faq_module.render()
+                elif tab_name == "Cutting Guides":
+                    import tabs.cutting_guides as cutting_guides_module
+                    cutting_guides_module.render(
+                        printer_info=selected_printer,
+                        preper_image=preper_image,
+                        print_image=print_image,
+                        apply_threshold=apply_threshold,
+                    )
                 else:
                     st.warning(f"Tab '{tab_name}' is not implemented yet")
             except Exception as e:

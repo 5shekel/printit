@@ -2,6 +2,7 @@
 
 import streamlit as st
 import os
+import time
 from PIL import Image
 from datetime import datetime
 
@@ -94,12 +95,15 @@ def render(list_saved_images, print_image, preper_image):
                             ).strftime("%Y-%m-%d %H:%M")
                             st.caption(f"{filename}\n{modified_time}")
                             
+                            history_copies = st.number_input("Copies", min_value=1, max_value=100, value=1, key=f"history_copies_{idx}_{st.session_state.page_number}")
                             col1, col2 = st.columns(2)
                             with col1:
                                 if st.button("Print", key=f"print_history_{idx}_{st.session_state.page_number}"):
                                     image_to_print = Image.open(image_path).convert("RGB")
                                     grayscale_image, dithered_image = preper_image(image_to_print)
-                                    print_image(grayscale_image, dither=True)
+                                    for _ in range(history_copies):
+                                        print_image(grayscale_image, dither=True)
+                                        time.sleep(0.5)
                             with col2:
                                 if st.button("Send to Sticker", key=f"send_to_sticker_{idx}_{st.session_state.page_number}"):
                                     st.session_state.selected_image_path = image_path
